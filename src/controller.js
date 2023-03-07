@@ -116,9 +116,9 @@ export function getController (config) {
   _config.scenes = config.scenes.map((scene, index) => {
     scene.index = index;
 
-    if (scene.viewSource && scene.start && scene.name) {
+    if (scene.viewSource && scene.start?.name) {
       // TODO: account for stickypos viewSource elements
-      scene._rect = getElementLayoutRect(scene.viewSource);
+      scene._rect = getElementLayoutRect(scene.viewSource, horizontal);
       scene = transformSceneRangesToOffsets(scene, viewportSize);
       rangesToObserve.push(scene);
     }

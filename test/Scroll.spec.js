@@ -57,7 +57,7 @@ test('start :: measure progress', t => {
   scroll.start();
 
   window.scrollTo(10, 1000);
-  window.executeAnimationFrame(scroll.time);
+  window.executeAnimationFrame(0);
 
   t.is(scroll.progress.x, 10);
   t.is(scroll.progress.y, 1000);
@@ -69,7 +69,7 @@ test('start :: effect progress', t => {
     root: window,
     scenes: [
       {
-        effect(scene, p, v) {
+        effect(scene, p) {
           progress = p;
         },
         start: 0,
@@ -81,9 +81,60 @@ test('start :: effect progress', t => {
   scroll.start();
 
   window.scrollTo(0, 300);
-  window.executeAnimationFrame(scroll.time);
+  window.executeAnimationFrame(0);
 
   t.is(progress, 0.6);
+});
+
+test('start :: effect progress :: view ranges', t => {
+  const element = {
+    offsetHeight: 100,
+    offsetTop: 100,
+    offsetParent: {
+      offsetTop: 200,
+      offsetParent: {
+        offsetTop: 0
+      }
+    }
+  };
+
+  let progress = 0;
+
+  const scroll = new Scroll({
+    root: window,
+    scenes: [
+      {
+        effect(s, p) {
+          progress = p;
+        },
+        start: {name: 'entry', offset: 50}, // 275
+        end: {name: 'contain', offset: 50}, // 325
+        viewSource: element
+      }
+    ]
+  });
+
+  scroll.start();
+
+  window.scrollTo(0, 250);
+  window.executeAnimationFrame(0);
+
+  t.is(progress, 0);
+
+  window.scrollTo(0, 285);
+  window.executeAnimationFrame(1);
+
+  t.is(progress, 0.2);
+
+  window.scrollTo(0, 300);
+  window.executeAnimationFrame(2);
+
+  t.is(progress, 0.5);
+
+  window.scrollTo(0, 325);
+  window.executeAnimationFrame(3);
+
+  t.is(progress, 1);
 });
 
 test('start :: effect progress :: velocityActive=true', t => {
@@ -108,7 +159,7 @@ test('start :: effect progress :: velocityActive=true', t => {
   scroll.start();
 
   window.scrollTo(0, 300);
-  window.executeAnimationFrame(scroll.time);
+  window.executeAnimationFrame(0);
 
   t.is(progress, 0.6);
   t.is(velocity, 300 / 400);
@@ -138,7 +189,7 @@ test('start :: effect progress :: velocityActive=true with transitionActive=true
   scroll.start();
 
   window.scrollTo(0, 300);
-  window.executeAnimationFrame(scroll.time);
+  window.executeAnimationFrame(0);
 
   t.is(progress, 0.3);
   t.is(velocity, 150 / 400);
@@ -152,7 +203,7 @@ test('start :: effect progress :: transitionActive=true', t => {
     transitionFriction: 0.5,
     scenes: [
       {
-        effect(scene, p, v) {
+        effect(scene, p) {
           progress = p;
         },
         start: 0,
@@ -164,7 +215,7 @@ test('start :: effect progress :: transitionActive=true', t => {
   scroll.start();
 
   window.scrollTo(0, 300);
-  window.executeAnimationFrame(scroll.time);
+  window.executeAnimationFrame(0);
 
   t.is(progress, 0.3);
 });
@@ -182,7 +233,7 @@ test('start :: effect progress :: with container', t => {
     container,
     scenes: [
       {
-        effect(scene, p, v) {
+        effect(scene, p) {
           progress = p;
         },
         start: 0,
@@ -194,7 +245,7 @@ test('start :: effect progress :: with container', t => {
   scroll.start();
 
   window.scrollTo(0, scrollY);
-  window.executeAnimationFrame(scroll.time);
+  window.executeAnimationFrame(0);
 
   t.is(progress, 0.6);
   t.is(container.style.transform, `translate3d(0px, -${scrollY}px, 0px)`);
@@ -209,7 +260,7 @@ test('viewport :: disable', t => {
     root: window,
     scenes: [
       {
-        effect(scene, p, v) {
+        effect(scene, p) {
           progress = p;
         },
         start: 0,
@@ -227,13 +278,13 @@ test('viewport :: disable', t => {
   });
 
   window.scrollTo(0, scrollY1);
-  window.executeAnimationFrame(scroll.time);
+  window.executeAnimationFrame(0);
 
   t.is(progress, 0.5);
   t.is(scroll.config.scenes[0].disabled, false);
 
   window.scrollTo(0, 75);
-  window.executeAnimationFrame(scroll.time);
+  window.executeAnimationFrame(0);
 
   t.is(progress, 0.75);
 
@@ -242,7 +293,7 @@ test('viewport :: disable', t => {
     isIntersecting: false,
     target: viewSource
   });
-  window.executeAnimationFrame(scroll.time);
+  window.executeAnimationFrame(1);
 
   t.is(scroll.config.scenes[0].disabled, true);
 });
@@ -253,7 +304,7 @@ test('pause', t => {
     root: window,
     scenes: [
       {
-        effect(scene, p, v) {
+        effect(scene, p) {
           progress = p;
         },
         start: 0,
@@ -265,7 +316,7 @@ test('pause', t => {
   scroll.start();
 
   window.scrollTo(0, 300);
-  window.executeAnimationFrame(scroll.time);
+  window.executeAnimationFrame(0);
 
   t.is(progress, 0.6);
 
@@ -280,7 +331,7 @@ test('destroy', t => {
     root: window,
     scenes: [
       {
-        effect(scene, p, v) {
+        effect(scene, p) {
           progress = p;
         },
         start: 0,

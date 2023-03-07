@@ -1,11 +1,13 @@
 const eventListeners = {
-  scroll: new Set()
+  scroll: new Set(),
+  resize: new Set()
 };
 
 const _window = {
   eventListeners,
   scrollX: 0,
   scrollY: 0,
+  clientHeight: 50,
   document: {
     body: {
       style: {
