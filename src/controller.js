@@ -1,4 +1,7 @@
-import { defaultTo } from './utilities.js';
+import { debounce, defaultTo } from './utilities.js';
+import { transformSceneRangesToOffsets, getElementLayoutRect } from './view.js';
+
+const VIEWPORT_RESIZE_INTERVAL = 100;
 
 /**
  * @private
@@ -86,6 +89,7 @@ export function getController (config) {
   const wrapper = _config.wrapper;
   const horizontal = _config.horizontal;
   const scenesByElement = new WeakMap();
+  let viewportSize = horizontal ? window.clientWidth : window.clientHeight;
 
   /*
    * Prepare snap points data.
@@ -103,19 +107,74 @@ export function getController (config) {
   const extraScroll = snaps.reduce((acc, snap) => acc + (snap[1] - snap[0]), 0);
 
   let lastX, lastY;
-  let resizeObserver, viewportObserver;
+  let containerResizeObserver, viewportObserver, rangesResizeObserver, viewportResizeHandler;
+  const rangesToObserve = [];
 
   /*
    * Prepare scenes data.
    */
-  _config.scenes.forEach(scene => {
-    if (scene.end == null) {
+  _config.scenes = config.scenes.map((scene, index) => {
+    scene.index = index;
+
+    if (scene.viewSource && scene.start && scene.name) {
+      // TODO: account for stickypos viewSource elements
+      scene._rect = getElementLayoutRect(scene.viewSource);
+      scene = transformSceneRangesToOffsets(scene, viewportSize);
+      rangesToObserve.push(scene);
+    }
+    else if (scene.end == null) {
       scene.end = scene.start + scene.duration;
     }
-    else if (scene.duration == null) {
+
+    if (scene.duration == null) {
       scene.duration = scene.end - scene.start;
     }
+
+    return scene;
   });
+
+  if (rangesToObserve.length) {
+    if (window.ResizeObserver) {
+      const targetToScene = new Map();
+
+      rangesResizeObserver = new window.ResizeObserver(function (entries) {
+        entries.forEach(entry => {
+          const scene = targetToScene.get(entry.target);
+          const {blockSize, inlineSize} = entry.borderBoxSize[0];
+
+          scene._rect.end = scene._rect.start + (horizontal ? inlineSize : blockSize);
+
+          _config.scenes[scene.index] = transformSceneRangesToOffsets(scene, viewportSize);
+
+          // replace the old object from the cache with the new one
+          rangesToObserve.splice(rangesToObserve.indexOf(scene), 1, _config.scenes[scene.index]);
+        })
+      });
+
+      rangesToObserve.forEach(scene => {
+        rangesResizeObserver.observe(scene.viewSource, {box: 'border-box'});
+        targetToScene.set(scene.viewSource, scene);
+      });
+    }
+
+    const viewportResizeHandler = debounce(function () {
+      viewportSize = horizontal ? window.clientWidth : window.clientHeight;
+
+      const newRanges = rangesToObserve.map(scene => {
+        const newScene = transformSceneRangesToOffsets(scene, viewportSize);
+
+        _config.scenes[scene.index] = newScene;
+
+        return newScene;
+      });
+
+      // reset cache
+      rangesToObserve.length = 0;
+      rangesToObserve.push(...newRanges);
+    }, VIEWPORT_RESIZE_INTERVAL);
+
+    window.addEventListener('resize', viewportResizeHandler);
+  }
 
   /*
    * Setup Smooth Scroll technique
@@ -137,8 +196,8 @@ export function getController (config) {
     setSize();
 
     if (_config.observeSize && window.ResizeObserver) {
-      resizeObserver = new window.ResizeObserver(setSize);
-      resizeObserver.observe(container, {box: 'border-box'});
+      containerResizeObserver = new window.ResizeObserver(setSize);
+      containerResizeObserver.observe(container, {box: 'border-box'});
     }
 
     /*
@@ -199,14 +258,14 @@ export function getController (config) {
     });
 
     _config.scenes.forEach(scene => {
-      if (scene.viewport) {
-        let scenesArray = scenesByElement.get(scene.viewport);
+      if (scene.viewSource) {
+        let scenesArray = scenesByElement.get(scene.viewSource);
 
         if (!scenesArray) {
           scenesArray = [];
-          scenesByElement.set(scene.viewport, scenesArray);
+          scenesByElement.set(scene.viewSource, scenesArray);
 
-          viewportObserver.observe(scene.viewport);
+          viewportObserver.observe(scene.viewSource);
         }
 
         scenesArray.push(scene);
@@ -300,19 +359,26 @@ export function getController (config) {
 
       _config.scrollClear(container);
 
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-        resizeObserver = null;
+      if (containerResizeObserver) {
+        containerResizeObserver.disconnect();
+        containerResizeObserver = null;
       }
     }
 
     if (viewportObserver) {
       viewportObserver.disconnect();
-      controller.viewportObserver = viewportObserver = null;
+      viewportObserver = null;
+    }
+
+    if (rangesResizeObserver) {
+      rangesResizeObserver.disconnect();
+      rangesResizeObserver = null;
+    }
+
+    if (viewportResizeHandler) {
+      window.removeEventListener('resize', viewportResizeHandler);
     }
   };
-
-  controller.viewportObserver = viewportObserver;
 
   return controller;
 }

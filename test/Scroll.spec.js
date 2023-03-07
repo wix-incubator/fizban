@@ -202,7 +202,7 @@ test('start :: effect progress :: with container', t => {
 
 test('viewport :: disable', t => {
   let progress = 0;
-  const viewport = {};
+  const viewSource = {};
   const scrollY1 = 50;
   const scrollY2 = 300;
   const scroll = new Scroll({
@@ -214,7 +214,7 @@ test('viewport :: disable', t => {
         },
         start: 0,
         duration: 100,
-        viewport
+        viewSource
       }
     ]
   });
@@ -223,7 +223,7 @@ test('viewport :: disable', t => {
 
   window.intersectionEntries.push({
     isIntersecting: true,
-    target: viewport
+    target: viewSource
   });
 
   window.scrollTo(0, scrollY1);
@@ -240,7 +240,7 @@ test('viewport :: disable', t => {
   window.scrollTo(0, scrollY2);
   window.intersectionEntries.push({
     isIntersecting: false,
-    target: viewport
+    target: viewSource
   });
   window.executeAnimationFrame(scroll.time);
 

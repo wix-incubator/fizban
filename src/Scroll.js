@@ -222,7 +222,7 @@ export default class Scroll {
  * @property {function} effect the effect to perform.
  * @property {boolean} [pauseDuringSnap] whether to pause the effect during snap points, effectively ignoring scroll during duration of scroll snapping.
  * @property {boolean} [disabled] whether to perform updates on the scene. Defaults to false.
- * @property {Element} [viewport] an element to be used for observing intersection with viewport for disabling/enabling the scene.
+ * @property {Element} [viewSource] an element to be used for observing intersection with viewport for disabling/enabling the scene, or the source of a ViewTimeline if scene start/end are provided as ranges.
  */
 
 /**
