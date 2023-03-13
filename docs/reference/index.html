@@ -211,9 +211,49 @@
               
                 
                 <li><a
-                  href='#getelementlayoutrect'
+                  href='#getissticky'
                   class="">
-                  getElementLayoutRect
+                  getIsSticky
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#getisscrollcontainer'
+                  class="">
+                  getIsScrollContainer
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#getstickyoffset'
+                  class="">
+                  getStickyOffset
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#getrectstart'
+                  class="">
+                  getRectStart
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#gettransformedscene'
+                  class="">
+                  getTransformedScene
                   
                 </a>
                 
@@ -1637,7 +1677,8 @@ Keeps the arguments from last call, even if that call gets ignored.</p>
   </div>
   
 
-  
+  <p>Convert a range into offset in pixels.</p>
+
     <div class='pre p1 fill-light mt0'>transformRangeToPosition(range: {name: RangeName, offset: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>}, viewportSize: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, rect: {start: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, end: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>}): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
   
   
@@ -1722,8 +1763,9 @@ Keeps the arguments from last call, even if that call gets ignored.</p>
   </div>
   
 
-  
-    <div class='pre p1 fill-light mt0'>transformSceneRangesToOffsets(scene: <a href="#scrollscene">ScrollScene</a>, viewportSize: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="#scrollscene">ScrollScene</a></div>
+  <p>Convert scene data in ranges into offsets in pixels.</p>
+
+    <div class='pre p1 fill-light mt0'>transformSceneRangesToOffsets(scene: <a href="#scrollscene">ScrollScene</a>, rect: {start: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, end: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>}, viewportSize: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, isHorizontal: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>): <a href="#scrollscene">ScrollScene</a></div>
   
   
 
@@ -1748,7 +1790,23 @@ Keeps the arguments from last call, even if that call gets ignored.</p>
       
         <div class='space-bottom0'>
           <div>
+            <span class='code bold'>rect</span> <code class='quiet'>({start: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, end: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>})</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
             <span class='code bold'>viewportSize</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>isHorizontal</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
 	    
           </div>
           
@@ -1791,8 +1849,234 @@ Keeps the arguments from last call, even if that call gets ignored.</p>
   
   <div class='clearfix'>
     
-    <h3 class='fl m0' id='getelementlayoutrect'>
-      getElementLayoutRect
+    <h3 class='fl m0' id='getissticky'>
+      getIsSticky
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>Check whether the position of an element is sticky.</p>
+
+    <div class='pre p1 fill-light mt0'>getIsSticky(style: CSSStyleDeclaration): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>style</span> <code class='quiet'>(CSSStyleDeclaration)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>:
+        
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='getisscrollcontainer'>
+      getIsScrollContainer
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>Check whether an element in scroll direction is a scroll container.</p>
+
+    <div class='pre p1 fill-light mt0'>getIsScrollContainer(style: CSSStyleDeclaration, isHorizontal: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>style</span> <code class='quiet'>(CSSStyleDeclaration)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>isHorizontal</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>:
+        
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='getstickyoffset'>
+      getStickyOffset
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>Get offset of an element in scroll direction.</p>
+
+    <div class='pre p1 fill-light mt0'>getStickyOffset(style: CSSStyleDeclaration, isHorizontal: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>style</span> <code class='quiet'>(CSSStyleDeclaration)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>isHorizontal</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
+        
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='getrectstart'>
+      getRectStart
     </h3>
     
     
@@ -1800,7 +2084,7 @@ Keeps the arguments from last call, even if that call gets ignored.</p>
   
 
   
-    <div class='pre p1 fill-light mt0'>getElementLayoutRect(element: <a href="https://developer.mozilla.org/docs/Web/HTML/Element">HTMLElement</a>, isHorizontal: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>): {start: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, end: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>}</div>
+    <div class='pre p1 fill-light mt0'>getRectStart(element: <a href="https://developer.mozilla.org/docs/Web/HTML/Element">HTMLElement</a>, isHorizontal: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
   
   
 
@@ -1839,7 +2123,93 @@ Keeps the arguments from last call, even if that call gets ignored.</p>
   
     
       <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>{start: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, end: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>}</code>:
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
+        
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='gettransformedscene'>
+      getTransformedScene
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>Returns a converted scene data from ranges into offsets in pixels.</p>
+
+    <div class='pre p1 fill-light mt0'>getTransformedScene(scene: <a href="#scrollscene">ScrollScene</a>, viewportSize: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, isHorizontal: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>): <a href="#scrollscene">ScrollScene</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>scene</span> <code class='quiet'>(<a href="#scrollscene">ScrollScene</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>viewportSize</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>isHorizontal</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="#scrollscene">ScrollScene</a></code>:
         
       
     
