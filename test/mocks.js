@@ -25,7 +25,7 @@ const _window = {
   requestAnimationFrame(fn) {
     _window.animationFrameHandlers.push(fn);
   },
-  executeAnimationFrame(prevTime) {
+  executeAnimationFrame(prevTime = 0) {
     const time = prevTime + 1;
 
     if ( _window.intersectionEntries.length ) {
@@ -52,6 +52,9 @@ const _window = {
   },
   removeEventListener(eventName, listener) {
     eventListeners[eventName].delete(listener);
+  },
+  getComputedStyle(element) {
+    return element?.style || {};
   }
 };
 

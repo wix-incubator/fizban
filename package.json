@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "c8 ava test/*.spec.js",
+    "test:debug": "ava test/*.spec.js",
     "docs": "documentation build src/Scroll.js -f html -o docs/reference -c documentation.yml",
     "rtfm": "npm run docs && http-server ./docs/reference"
   },

@@ -1,5 +1,5 @@
 import { debounce, defaultTo } from './utilities.js';
-import { transformSceneRangesToOffsets, getElementLayoutRect } from './view.js';
+import { getTransformedScene } from './view.js';
 
 const VIEWPORT_RESIZE_INTERVAL = 100;
 
@@ -117,9 +117,7 @@ export function getController (config) {
     scene.index = index;
 
     if (scene.viewSource && scene.start?.name) {
-      // TODO: account for stickypos viewSource elements
-      scene._rect = getElementLayoutRect(scene.viewSource, horizontal);
-      scene = transformSceneRangesToOffsets(scene, viewportSize);
+      scene = getTransformedScene(scene, viewportSize, horizontal);
       rangesToObserve.push(scene);
     }
     else if (scene.end == null) {
@@ -140,11 +138,12 @@ export function getController (config) {
       rangesResizeObserver = new window.ResizeObserver(function (entries) {
         entries.forEach(entry => {
           const scene = targetToScene.get(entry.target);
-          const {blockSize, inlineSize} = entry.borderBoxSize[0];
+          // const {blockSize, inlineSize} = entry.borderBoxSize[0];
 
-          scene._rect.end = scene._rect.start + (horizontal ? inlineSize : blockSize);
+          // scene._rect.end = scene._rect.start + (horizontal ? inlineSize : blockSize);
 
-          _config.scenes[scene.index] = transformSceneRangesToOffsets(scene, viewportSize);
+          // TODO: try to optimize by using `const {blockSize, inlineSize} = entry.borderBoxSize[0]`
+          _config.scenes[scene.index] = getTransformedScene(scene, viewportSize, horizontal);
 
           // replace the old object from the cache with the new one
           rangesToObserve.splice(rangesToObserve.indexOf(scene), 1, _config.scenes[scene.index]);
@@ -161,7 +160,7 @@ export function getController (config) {
       viewportSize = horizontal ? window.clientWidth : window.clientHeight;
 
       const newRanges = rangesToObserve.map(scene => {
-        const newScene = transformSceneRangesToOffsets(scene, viewportSize);
+        const newScene = getTransformedScene(scene, viewportSize, horizontal);
 
         _config.scenes[scene.index] = newScene;
 
