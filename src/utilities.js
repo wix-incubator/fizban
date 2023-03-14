@@ -45,8 +45,31 @@ function frameThrottle (fn) {
   };
 }
 
+/**
+ * Debounce a function by interval in milliseconds.
+ *
+ * @param {function} fn
+ * @param {number} interval
+ * @return {function}
+ */
+function debounce (fn, interval) {
+  let debounced = 0;
+
+  return function bounce () {
+    if (debounced) {
+      window.clearTimeout(debounced);
+    }
+
+    debounced = window.setTimeout(() => {
+      debounced = 0;
+      fn();
+    }, interval);
+  };
+}
+
 export {
   defaultTo,
   lerp,
-  frameThrottle
+  frameThrottle,
+  debounce
 };

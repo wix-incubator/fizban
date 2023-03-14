@@ -1,11 +1,13 @@
 const eventListeners = {
-  scroll: new Set()
+  scroll: new Set(),
+  resize: new Set()
 };
 
 const _window = {
   eventListeners,
   scrollX: 0,
   scrollY: 0,
+  clientHeight: 50,
   document: {
     body: {
       style: {
@@ -23,7 +25,7 @@ const _window = {
   requestAnimationFrame(fn) {
     _window.animationFrameHandlers.push(fn);
   },
-  executeAnimationFrame(prevTime) {
+  executeAnimationFrame(prevTime = 0) {
     const time = prevTime + 1;
 
     if ( _window.intersectionEntries.length ) {
@@ -50,6 +52,9 @@ const _window = {
   },
   removeEventListener(eventName, listener) {
     eventListeners[eventName].delete(listener);
+  },
+  getComputedStyle(element) {
+    return element?.style || {};
   }
 };
 
