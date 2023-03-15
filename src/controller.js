@@ -89,7 +89,9 @@ export function getController (config) {
   const wrapper = _config.wrapper;
   const horizontal = _config.horizontal;
   const scenesByElement = new WeakMap();
-  let viewportSize = horizontal ? window.clientWidth : window.clientHeight;
+  let viewportSize = horizontal
+    ? window.document.documentElement.clientWidth
+    : window.document.documentElement.clientHeight;
 
   /*
    * Prepare snap points data.
@@ -138,10 +140,6 @@ export function getController (config) {
       rangesResizeObserver = new window.ResizeObserver(function (entries) {
         entries.forEach(entry => {
           const scene = targetToScene.get(entry.target);
-          // const {blockSize, inlineSize} = entry.borderBoxSize[0];
-
-          // scene._rect.end = scene._rect.start + (horizontal ? inlineSize : blockSize);
-
           // TODO: try to optimize by using `const {blockSize, inlineSize} = entry.borderBoxSize[0]`
           _config.scenes[scene.index] = getTransformedScene(scene, viewportSize, horizontal);
 
@@ -157,7 +155,9 @@ export function getController (config) {
     }
 
     const viewportResizeHandler = debounce(function () {
-      viewportSize = horizontal ? window.clientWidth : window.clientHeight;
+      viewportSize = horizontal
+        ? window.document.documentElement.clientWidth
+        : window.document.documentElement.clientHeight;
 
       const newRanges = rangesToObserve.map(scene => {
         const newScene = getTransformedScene(scene, viewportSize, horizontal);

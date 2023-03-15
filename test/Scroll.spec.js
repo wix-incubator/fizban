@@ -1,6 +1,6 @@
 import test from 'ava';
 import './mocks.js';
-import Scroll from '../src/Scroll.js';
+import { Scroll } from '../src/Scroll.js';
 
 test('constructor :: empty', t => {
   const scroll = new Scroll();

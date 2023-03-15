@@ -27,7 +27,7 @@ const DEFAULTS = {
  * });
  * scroll.start();
  */
-export default class Scroll {
+export class Scroll {
   constructor (config = {}) {
     this.config = defaultTo(config, DEFAULTS);
 

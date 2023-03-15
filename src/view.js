@@ -52,26 +52,31 @@ function transformRangeToPosition (range, viewportSize, rect) {
 function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal) {
   const { start, end, duration } = scene;
 
-  let startOffset, endOffset;
+  let startOffset = start;
+  let endOffset = end;
+  let startRange = scene.startRange;
+  let endRange = scene.endRange;
 
   if (typeof duration === 'string') {
     startOffset = transformRangeToPosition({ name: duration, offset: 0 }, viewportSize, rect);
     endOffset = transformRangeToPosition({ name: duration, offset: 100 }, viewportSize, rect);
   }
   else {
-    if (start && start.name) {
-      startOffset = transformRangeToPosition(start, viewportSize, rect);
+    if (startRange || (start && start.name)) {
+      startRange = startRange || start;
+      startOffset = transformRangeToPosition(startRange, viewportSize, rect);
     }
 
-    if (end && end.name) {
-      endOffset = transformRangeToPosition(end, viewportSize, rect);
+    if (endRange || (end && end.name)) {
+      endRange = endRange || end;
+      endOffset = transformRangeToPosition(endRange, viewportSize, rect);
     }
     else if (typeof duration === 'number') {
       endOffset = startOffset + duration;
     }
   }
 
-  return {...scene, start: startOffset, end: endOffset};
+  return {...scene, start: startOffset, end: endOffset, startRange, endRange };
 }
 
 /**

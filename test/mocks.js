@@ -7,8 +7,10 @@ const _window = {
   eventListeners,
   scrollX: 0,
   scrollY: 0,
-  clientHeight: 50,
   document: {
+    documentElement: {
+      clientHeight: 50
+    },
     body: {
       style: {
         transform: ''
