@@ -12,3 +12,5 @@ declare type ScrollScene = {
   disabled?: boolean;
   viewSource?: Element;
 }
+
+declare module "fizban";
