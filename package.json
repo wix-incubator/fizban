@@ -3,6 +3,7 @@
   "version": "0.1.1",
   "description": "Tiny library for performant scroll-driven effects",
   "main": "index.js",
+  "types": "types.d.ts",
   "type": "module",
   "scripts": {
     "test": "c8 ava test/*.spec.js",
