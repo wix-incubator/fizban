@@ -327,7 +327,7 @@ export function getController (config) {
     /*
      * Perform scene progression.
      */
-    _config.scenes.forEach(scene => {
+    for (let scene of _config.scenes) {
       // if active
       if (!scene.disabled) {
         const {start, end, duration} = scene;
@@ -342,7 +342,7 @@ export function getController (config) {
         // run effect
         scene.effect(scene, progress, velocity);
       }
-    });
+    }
 
     // cache last position
     lastX = x;
@@ -393,11 +393,20 @@ export function getController (config) {
     }
   }
 
+  function toggleScenes (sceneMap) {
+    _config.scenes.forEach((scene) => {
+      if (scene.id in sceneMap) {
+        scene.disabled = !sceneMap[scene.id];
+      }
+    });
+  }
+
   /**
    * Scroll controller.
    */
   return {
     tick,
-    destroy
+    destroy,
+    toggleScenes
   };
 }

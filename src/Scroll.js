@@ -48,7 +48,7 @@ export class Scroll {
       vy: 0
     };
 
-    this.effects = [];
+    this.effect = null;
     this.ticker = this.config.ticker;
     this.config.root = this.config.root || window;
     this.config.resetProgress = this.config.resetProgress || this.resetProgress.bind(this);
@@ -67,15 +67,15 @@ export class Scroll {
   }
 
   /**
-   * Setup event and effects.
+   * Setup event and effect.
    */
   setup() {
-    this.setupEffects();
+    this.setupEffect();
     this.setupEvent();
   }
 
   /**
-   * Setup event and effects, and starts animation loop.
+   * Setup event and effect, and starts animation loop.
    */
   start () {
     this.setup();
@@ -145,10 +145,8 @@ export class Scroll {
       ? this.currentProgress
       : this.progress
 
-    // update effects
-    for (let effect of this.effects) {
-      effect.tick(progress_);
-    }
+    // update effect
+    this.effect.tick(progress_);
 
     progress_.prevX = progress.x;
     progress_.prevY = progress.y;
@@ -163,11 +161,11 @@ export class Scroll {
   }
 
   /**
-   * Stop the event and effects, and remove all DOM side-effects.
+   * Stop the event and effect, and remove all DOM side-effects.
    */
   destroy () {
     this.pause();
-    this.removeEffects();
+    this.removeEffect();
   }
 
   /**
@@ -187,19 +185,26 @@ export class Scroll {
   /**
    * Reset registered effect.
    */
-  setupEffects () {
-    this.removeEffects();
-    this.effects = [getController(this.config)];
+  setupEffect () {
+    this.removeEffect();
+    this.effect = getController(this.config);
   }
 
   /**
-   * Remove registered effects.
+   * Remove registered effect.
    */
-  removeEffects () {
-    for (let effect of this.effects) {
-      effect.destroy && effect.destroy();
-    }
-    this.effects.length = 0;
+  removeEffect () {
+    this.effect && this.effect.destroy();
+    this.effect = null;
+  }
+
+  /**
+   * Toggle scenes with a map of scene.id to a boolean representing whether that scene is active.
+   *
+   * @param {object} sceneMap
+   */
+  toggleScenes (sceneMap) {
+    this.effect && this.effect.toggleScenes(sceneMap);
   }
 }
 
@@ -230,6 +235,7 @@ export class Scroll {
  * @property {boolean} [pauseDuringSnap] whether to pause the effect during snap points, effectively ignoring scroll during duration of scroll snapping.
  * @property {boolean} [disabled] whether to perform updates on the scene. Defaults to false.
  * @property {Element} [viewSource] an element to be used for observing intersection with viewport for disabling/enabling the scene, or the source of a ViewTimeline if scene start/end are provided as ranges.
+ * @property {string} [id] mandatory only if you want to perform actions on scenes, e.g. toggling disabled.
  */
 
 /**

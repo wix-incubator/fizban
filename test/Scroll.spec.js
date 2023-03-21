@@ -669,5 +669,5 @@ test('destroy', t => {
 
   t.is(scroll.ticking, false);
 
-  t.is(scroll.effects.length, 0);
+  t.is(scroll.effect === null, true);
 });
