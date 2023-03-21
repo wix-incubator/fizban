@@ -71,15 +71,31 @@ function calcProgress (p, start, end, duration) {
   return progress;
 }
 
+/**
+ *
+ * @param {boolean} isHorizontal
+ * @return {number}
+ */
+function getViewportSize (isHorizontal) {
+  return window.visualViewport
+    ? isHorizontal
+      ? window.visualViewport.width
+      : window.visualViewport.height
+    : isHorizontal
+      ? window.document.documentElement.clientWidth
+      : window.document.documentElement.clientHeight
+}
+
 /*
  * Scroll controller factory
  */
+
 /**
  * Initialize and return a scroll controller.
  *
  * @private
  * @param {scrollConfig} config
- * @return {function}
+ * @return {{tick: function, destroy: function}}
  */
 export function getController (config) {
   const _config = defaultTo(config, DEFAULTS);
@@ -89,9 +105,7 @@ export function getController (config) {
   const wrapper = _config.wrapper;
   const horizontal = _config.horizontal;
   const scenesByElement = new WeakMap();
-  let viewportSize = horizontal
-    ? window.document.documentElement.clientWidth
-    : window.document.documentElement.clientHeight;
+  let viewportSize = getViewportSize(horizontal);
 
   /*
    * Prepare snap points data.
@@ -155,9 +169,7 @@ export function getController (config) {
     }
 
     const viewportResizeHandler = debounce(function () {
-      viewportSize = horizontal
-        ? window.document.documentElement.clientWidth
-        : window.document.documentElement.clientHeight;
+      viewportSize = getViewportSize(horizontal);
 
       const newRanges = rangesToObserve.map(scene => {
         const newScene = getTransformedScene(scene, viewportSize, horizontal);
@@ -172,7 +184,7 @@ export function getController (config) {
       rangesToObserve.push(...newRanges);
     }, VIEWPORT_RESIZE_INTERVAL);
 
-    window.addEventListener('resize', viewportResizeHandler);
+    (window.visualViewport || window).addEventListener('resize', viewportResizeHandler);
   }
 
   /*
@@ -236,7 +248,7 @@ export function getController (config) {
       _config.resetProgress({x, y});
 
       // render current position
-      controller({x, y, vx: 0, vy: 0});
+      tick({x, y, vx: 0, vy: 0});
     }
   }
 
@@ -273,8 +285,7 @@ export function getController (config) {
   }
 
   /**
-   * Scroll scenes controller.
-   * Takes progress object and orchestrates scenes.
+   * Updates progress in all scene effects.
    *
    * @private
    * @param {Object} progress
@@ -283,7 +294,7 @@ export function getController (config) {
    * @param {number} progress.vx
    * @param {number} progress.vy
    */
-  function controller ({x, y, vx, vy}) {
+  function tick ({x, y, vx, vy}) {
     x = +x.toFixed(1);
     y = +y.toFixed(1);
 
@@ -338,7 +349,10 @@ export function getController (config) {
     lastY = y;
   }
 
-  controller.destroy = function () {
+  /**
+   * Removes all side effects and deletes all objects.
+   */
+  function destroy () {
     if (container) {
       if (horizontal) {
         body.style.width = '';
@@ -375,9 +389,15 @@ export function getController (config) {
     }
 
     if (viewportResizeHandler) {
-      window.removeEventListener('resize', viewportResizeHandler);
+      (window.visualViewport || window).removeEventListener('resize', viewportResizeHandler);
     }
-  };
+  }
 
-  return controller;
+  /**
+   * Scroll controller.
+   */
+  return {
+    tick,
+    destroy
+  };
 }

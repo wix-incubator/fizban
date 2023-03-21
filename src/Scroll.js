@@ -67,11 +67,18 @@ export class Scroll {
   }
 
   /**
+   * Setup event and effects.
+   */
+  setup() {
+    this.setupEffects();
+    this.setupEvent();
+  }
+
+  /**
    * Setup event and effects, and starts animation loop.
    */
   start () {
-    this.setupEvent();
-    this.setupEffects();
+    this.setup();
 
     // start animating
     this.ticker.add(this);
@@ -140,7 +147,7 @@ export class Scroll {
 
     // update effects
     for (let effect of this.effects) {
-      effect(progress_);
+      effect.tick(progress_);
     }
 
     progress_.prevX = progress.x;
