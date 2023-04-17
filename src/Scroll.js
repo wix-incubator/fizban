@@ -221,7 +221,7 @@ export class Scroll {
  */
 
 /**
- * @typedef {function} EffectCallback
+ * @typedef {function(scene: ScrollScene, progress: number, velocity: number): void} EffectCallback
  * @param {ScrollScene} scene
  * @param {number} progress
  * @param {number} velocity
