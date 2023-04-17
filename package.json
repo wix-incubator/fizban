@@ -1,6 +1,6 @@
 {
   "name": "fizban",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Tiny library for performant scroll-driven effects",
   "main": "index.js",
   "types": "types.d.ts",
