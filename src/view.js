@@ -1,9 +1,4 @@
 /**
- * @typedef RangeName
- * @type {'entry' | 'contain' | 'exit' | 'cover'}
- */
-
-/**
  * Convert a range into offset in pixels.
  *
  * @param {{name: RangeName, offset: number}} range
@@ -56,18 +51,22 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal)
   let endOffset = end;
   let startRange = scene.startRange;
   let endRange = scene.endRange;
+  let overrideDuration;
 
   if (typeof duration === 'string') {
-    startOffset = transformRangeToPosition({ name: duration, offset: 0 }, viewportSize, rect);
-    endOffset = transformRangeToPosition({ name: duration, offset: 100 }, viewportSize, rect);
+    startRange = { name: duration, offset: 0 }
+    endRange = { name: duration, offset: 100 }
+    startOffset = transformRangeToPosition(startRange, viewportSize, rect);
+    endOffset = transformRangeToPosition(endRange, viewportSize, rect);
+    overrideDuration = endOffset - startOffset;
   }
   else {
-    if (startRange || (start && start.name)) {
+    if (startRange || start?.name) {
       startRange = startRange || start;
       startOffset = transformRangeToPosition(startRange, viewportSize, rect);
     }
 
-    if (endRange || (end && end.name)) {
+    if (endRange || end?.name) {
       endRange = endRange || end;
       endOffset = transformRangeToPosition(endRange, viewportSize, rect);
     }
@@ -76,7 +75,7 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal)
     }
   }
 
-  return {...scene, start: startOffset, end: endOffset, startRange, endRange };
+  return {...scene, start: startOffset, end: endOffset, startRange, endRange, duration: overrideDuration || duration };
 }
 
 /**

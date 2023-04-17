@@ -2,6 +2,9 @@ toc:
   - Scroll
   - scrollConfig
   - ScrollScene
+  - EffectCallback
+  - RangeOffset
+  - RangeName
   - SnapPoint
   - name: utilities
     children:

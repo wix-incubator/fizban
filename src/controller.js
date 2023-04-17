@@ -135,7 +135,7 @@ export function getController (config) {
   _config.scenes = config.scenes.map((scene, index) => {
     scene.index = index;
 
-    if (scene.viewSource && scene.start?.name) {
+    if (scene.viewSource && (typeof scene.duration === 'string' || scene.start?.name)) {
       scene = getTransformedScene(scene, viewportSize, horizontal);
 
       if (_config.observeSourcesResize) {

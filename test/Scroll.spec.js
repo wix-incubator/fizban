@@ -133,6 +133,56 @@ test('start :: effect progress :: view ranges', t => {
   t.is(progress, 1);
 });
 
+test('start :: effect progress :: view ranges :: duration range', t => {
+  const element = {
+    offsetHeight: 100,
+    offsetTop: 100,
+    offsetParent: {
+      offsetTop: 200,
+      offsetParent: {
+        offsetTop: 0
+      }
+    }
+  };
+
+  let progress = 0;
+
+  const scroll = new Scroll({
+    root: window,
+    scenes: [
+      {
+        effect(s, p) {
+          progress = p;
+        },
+        duration: 'contain', // 300 - 350
+        viewSource: element
+      }
+    ]
+  });
+
+  scroll.start();
+
+  window.scrollTo(0, 285);
+  window.executeAnimationFrame(0);
+
+  t.is(progress, 0);
+
+  window.scrollTo(0, 300);
+  window.executeAnimationFrame(1);
+
+  t.is(progress, 0);
+
+  window.scrollTo(0, 325);
+  window.executeAnimationFrame(2);
+
+  t.is(progress, 0.5);
+
+  window.scrollTo(0, 350);
+  window.executeAnimationFrame(3);
+
+  t.is(progress, 1);
+});
+
 test('start :: effect progress :: view ranges :: sticky element', t => {
   const element = {
     offsetHeight: 50,
