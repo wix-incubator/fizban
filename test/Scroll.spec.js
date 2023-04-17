@@ -22,8 +22,7 @@ test('resetProgress', t => {
 
   t.is(window.scrollX, scrollPosition.x);
   t.is(window.scrollY, scrollPosition.y);
-  t.is(scroll.progress.x, scrollPosition.x);
-  t.is(scroll.progress.y, scrollPosition.y);
+  t.is(scroll.progress.p, scrollPosition.y);
 });
 
 test('resetProgress :: animationActive=true', t => {
@@ -36,10 +35,8 @@ test('resetProgress :: animationActive=true', t => {
 
   t.is(window.scrollX, scrollPosition.x);
   t.is(window.scrollY, scrollPosition.y);
-  t.is(scroll.progress.x, scrollPosition.x);
-  t.is(scroll.progress.y, scrollPosition.y);
-  t.is(scroll.currentProgress.x, scrollPosition.x);
-  t.is(scroll.currentProgress.y, scrollPosition.y);
+  t.is(scroll.progress.p, scrollPosition.y);
+  t.is(scroll.currentProgress.p, scrollPosition.y);
 });
 
 test('start :: measure progress', t => {
@@ -59,8 +56,7 @@ test('start :: measure progress', t => {
   window.scrollTo(10, 1000);
   window.executeAnimationFrame(0);
 
-  t.is(scroll.progress.x, 10);
-  t.is(scroll.progress.y, 1000);
+  t.is(scroll.progress.p, 1000);
 });
 
 test('start :: effect progress', t => {
@@ -566,7 +562,7 @@ test('start :: effect progress :: with container', t => {
   window.executeAnimationFrame(0);
 
   t.is(progress, 0.6);
-  t.is(container.style.transform, `translate3d(0px, -${scrollY}px, 0px)`);
+  t.is(container.style.transform, `translateY(-${scrollY}px)`);
 });
 
 test('viewport :: disable', t => {
@@ -638,9 +634,11 @@ test('pause', t => {
 
   t.is(progress, 0.6);
 
+  const scrollListenersSize = window.eventListeners.scroll.size
+
   scroll.pause();
 
-  t.is(scroll.ticking, false);
+  t.is(window.eventListeners.scroll.size, scrollListenersSize - 1);
 });
 
 test('destroy', t => {
@@ -665,9 +663,11 @@ test('destroy', t => {
 
   t.is(progress, 0.6);
 
+  const scrollListenersSize = window.eventListeners.scroll.size
+
   scroll.destroy();
 
-  t.is(scroll.ticking, false);
+  t.is(window.eventListeners.scroll.size, scrollListenersSize - 1);
 
   t.is(scroll.effect === null, true);
 });

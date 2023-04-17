@@ -10,10 +10,12 @@ const VIEWPORT_RESIZE_INTERVAL = 100;
 const DEFAULTS = {
   horizontal: false,
   observeSize: true,
-  observeViewport: true,
+  observeViewportEntry: true,
   viewportRootMargin: '7% 7%',
-  scrollHandler (container, wrapper, x, y) {
-    container.style.transform = `translate3d(${-x}px, ${-y}px, 0px)`;
+  observeViewportResize: false,
+  observeSourcesResize: false,
+  scrollHandler (container, wrapper, p, isHorizontal) {
+    container.style.transform = isHorizontal ? `translateX(${-p}px)` : `translateY(${-p}px)`;
   },
   scrollClear (container /*, wrapper, x, y */) {
     container.style.transform = '';
@@ -23,6 +25,7 @@ const DEFAULTS = {
 /*
  * Utilities for scroll controller
  */
+
 
 /**
  * Utility for calculating the virtual scroll position, taking snap points into account.
@@ -122,7 +125,7 @@ export function getController (config) {
   // calculate extra scroll if we have snaps
   const extraScroll = snaps.reduce((acc, snap) => acc + (snap[1] - snap[0]), 0);
 
-  let lastX, lastY;
+  let lastP;
   let containerResizeObserver, viewportObserver, rangesResizeObserver, viewportResizeHandler;
   const rangesToObserve = [];
 
@@ -134,7 +137,10 @@ export function getController (config) {
 
     if (scene.viewSource && scene.start?.name) {
       scene = getTransformedScene(scene, viewportSize, horizontal);
-      rangesToObserve.push(scene);
+
+      if (_config.observeSourcesResize) {
+        rangesToObserve.push(scene);
+      }
     }
     else if (scene.end == null) {
       scene.end = scene.start + scene.duration;
@@ -142,6 +148,10 @@ export function getController (config) {
 
     if (scene.duration == null) {
       scene.duration = scene.end - scene.start;
+    }
+
+    if (!('observeViewEntry' in scene)) {
+      scene.observeViewEntry = true;
     }
 
     return scene;
@@ -168,23 +178,27 @@ export function getController (config) {
       });
     }
 
-    const viewportResizeHandler = debounce(function () {
-      viewportSize = getViewportSize(horizontal);
+    let viewportResizeHandler;
 
-      const newRanges = rangesToObserve.map(scene => {
-        const newScene = getTransformedScene(scene, viewportSize, horizontal);
+    if (_config.observeViewportResize) {
+      viewportResizeHandler = debounce(function () {
+        viewportSize = getViewportSize(horizontal);
 
-        _config.scenes[scene.index] = newScene;
+        const newRanges = rangesToObserve.map(scene => {
+          const newScene = getTransformedScene(scene, viewportSize, horizontal);
 
-        return newScene;
-      });
+          _config.scenes[scene.index] = newScene;
 
-      // reset cache
-      rangesToObserve.length = 0;
-      rangesToObserve.push(...newRanges);
-    }, VIEWPORT_RESIZE_INTERVAL);
+          return newScene;
+        });
 
-    (window.visualViewport || window).addEventListener('resize', viewportResizeHandler);
+        // reset cache
+        rangesToObserve.length = 0;
+        rangesToObserve.push(...newRanges);
+      }, VIEWPORT_RESIZE_INTERVAL);
+
+      (window.visualViewport || window).addEventListener('resize', viewportResizeHandler);
+    }
   }
 
   /*
@@ -235,27 +249,28 @@ export function getController (config) {
       // get current scroll position (support window, element and window in IE)
       let x = root.scrollX || root.pageXOffset || root.scrollLeft || 0;
       let y = root.scrollY || root.pageYOffset || root.scrollTop || 0;
+      let p = horizontal ? x : y;
 
       // increment current scroll position by accumulated snap point durations
       if (horizontal) {
-        x = snaps.reduce((acc, [start, end]) => start < acc ? acc + (end - start) : acc, x);
+        p = snaps.reduce((acc, [start, end]) => start < acc ? acc + (end - start) : acc, p);
       }
       else {
-        y = snaps.reduce((acc, [start, end]) => start < acc ? acc + (end - start) : acc, y);
+        p = snaps.reduce((acc, [start, end]) => start < acc ? acc + (end - start) : acc, p);
       }
 
       // update scroll and progress to new calculated position
       _config.resetProgress({x, y});
 
       // render current position
-      tick({x, y, vx: 0, vy: 0});
+      tick({p, vp: 0});
     }
   }
 
   /*
    * Observe entry and exit of scenes into view
    */
-  if (_config.observeViewport && window.IntersectionObserver) {
+  if (_config.observeViewportEntry && window.IntersectionObserver) {
     viewportObserver = new window.IntersectionObserver(function (intersections) {
       intersections.forEach(intersection => {
         (scenesByElement.get(intersection.target) || []).forEach(scene => {
@@ -269,7 +284,7 @@ export function getController (config) {
     });
 
     _config.scenes.forEach(scene => {
-      if (scene.viewSource) {
+      if (scene.viewSource && scene.observeViewEntry) {
         let scenesArray = scenesByElement.get(scene.viewSource);
 
         if (!scenesArray) {
@@ -289,39 +304,26 @@ export function getController (config) {
    *
    * @private
    * @param {Object} progress
-   * @param {number} progress.x
-   * @param {number} progress.y
-   * @param {number} progress.vx
-   * @param {number} progress.vy
+   * @param {number} progress.p
+   * @param {number} progress.vp
    */
-  function tick ({x, y, vx, vy}) {
-    x = +x.toFixed(1);
-    y = +y.toFixed(1);
+  function tick ({p, vp}) {
+    p = +p.toFixed(1);
 
-    const velocity = horizontal
-      ? +vx.toFixed(4)
-      : +vy.toFixed(4);
+    const velocity = +vp.toFixed(4);
 
     // if nothing changed bail out
-    if (x === lastX && y === lastY) return;
+    if (p === lastP) return;
 
-    let _x = x, _y = y;
+    let _p = p;
 
     if (snaps.length) {
-      // we have snap points so calculate virtual position
-      if (horizontal) {
-        _x = calcPosition(x, snaps);
-        _y = 0;
-      }
-      else {
-        _y = calcPosition(y, snaps);
-        _x = 0;
-      }
+      _p = calcPosition(p, snaps);
     }
 
     if (container) {
       // handle content scrolling
-      _config.scrollHandler(container, wrapper, _x, _y);
+      _config.scrollHandler(container, wrapper, _p, horizontal);
     }
 
     /*
@@ -332,9 +334,7 @@ export function getController (config) {
       if (!scene.disabled) {
         const {start, end, duration} = scene;
         // get global scroll progress
-        const t = horizontal
-          ? scene.pauseDuringSnap ? _x : x
-          : scene.pauseDuringSnap ? _y : y;
+        const t = scene.pauseDuringSnap ? _p : p;
 
         // calculate scene's progress
         const progress = calcProgress(t, start, end, duration);
@@ -345,8 +345,7 @@ export function getController (config) {
     }
 
     // cache last position
-    lastX = x;
-    lastY = y;
+    lastP = p;
   }
 
   /**
@@ -393,20 +392,11 @@ export function getController (config) {
     }
   }
 
-  function toggleScenes (sceneMap) {
-    _config.scenes.forEach((scene) => {
-      if (scene.id in sceneMap) {
-        scene.disabled = !sceneMap[scene.id];
-      }
-    });
-  }
-
   /**
    * Scroll controller.
    */
   return {
     tick,
-    destroy,
-    toggleScenes
+    destroy
   };
 }

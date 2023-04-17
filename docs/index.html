@@ -39,7 +39,8 @@
     }
 
     #sticky-1 img {
-      width: 100%;
+      min-height: 100vh;
+      min-width: 100%;
       object-fit: cover;
       mix-blend-mode: difference;
     }
@@ -54,13 +55,16 @@
     </div>
   </main>
   <script type="module">
-    import { Scroll } from "https://cdn.skypack.dev/fizban@0.1.4";
+    import { Scroll } from "https://cdn.skypack.dev/fizban@0.2.0";
 
     const stk = document.querySelector('#sticky-1');
     const animation = stk.getAnimations()[0];
     const duration = animation.effect.getTiming().duration;
 
     const scroll = new Scroll({
+      transitionActive: true,
+      transitionFriction: 0.95,
+      transitionEpsilon: 0.05,
       scenes: [
         {
           viewSource: document.querySelector('#sticky-1'),

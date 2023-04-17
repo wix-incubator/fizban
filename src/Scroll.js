@@ -1,14 +1,13 @@
 import { getController } from './controller.js';
 import { defaultTo, frameThrottle, lerp } from './utilities.js';
-import { ticker } from './ticker.js';
 
 /**
  * @private
  */
 const DEFAULTS = {
-  ticker,
   transitionActive: false,
-  transitionFriction: 0.4,
+  transitionFriction: 0.9,
+  transitionEpsilon: 0.1,
   velocityActive: false,
   velocityMax: 1
 };
@@ -18,11 +17,9 @@ const DEFAULTS = {
  * @param {scrollConfig} config
  *
  * @example
- * import { Scroll } from 'two.5';
+ * import { Scroll } from 'fizban';
  *
  * const scroll = new Scroll({
- *     container: document.querySelector('main'),
- *     wrapper: document.querySelector('body > div'),
  *     scenes: [...]
  * });
  * scroll.start();
@@ -32,64 +29,47 @@ export class Scroll {
     this.config = defaultTo(config, DEFAULTS);
 
     this.progress = {
-      x: 0,
-      y: 0,
-      prevX: 0,
-      prevY: 0,
-      vx: 0,
-      vy: 0
+      p: 0,
+      prevP: 0,
+      vp: 0
     };
     this.currentProgress = {
-      x: 0,
-      y: 0,
-      prevX: 0,
-      prevY: 0,
-      vx: 0,
-      vy: 0
+      p: 0,
+      prevP: 0,
+      vp: 0
     };
 
+    this._lerpFrameId = 0;
     this.effect = null;
-    this.ticker = this.config.ticker;
     this.config.root = this.config.root || window;
     this.config.resetProgress = this.config.resetProgress || this.resetProgress.bind(this);
 
     this._measure = this.config.measure || (() => {
-      const root = this.config.root
+      const root = this.config.root;
       // get current scroll position from window or element
-      this.progress.x = root.scrollX || root.scrollLeft || 0;
-      this.progress.y = root.scrollY || root.scrollTop || 0;
+      this.progress.p = this.config.horizontal
+        ? root.scrollX || root.scrollLeft || 0
+        : root.scrollY || root.scrollTop || 0;
     });
 
     this._trigger = frameThrottle(() => {
       this._measure?.();
-      this.tick()
+      this.tick(true);
     });
   }
 
   /**
    * Setup event and effect.
    */
-  setup() {
+  start () {
     this.setupEffect();
     this.setupEvent();
   }
 
   /**
-   * Setup event and effect, and starts animation loop.
-   */
-  start () {
-    this.setup();
-
-    // start animating
-    this.ticker.add(this);
-  }
-
-  /**
-   * Removes event and stops animation loop.
+   * Removes event listener.
    */
   pause () {
-    // stop animation
-    this.ticker.remove(this);
     this.removeEvent();
   }
 
@@ -101,20 +81,15 @@ export class Scroll {
    * @param {number} progress.y
    */
   resetProgress ({x, y}) {
-    this.progress.x = x;
-    this.progress.y = y;
-    this.progress.prevX = x;
-    this.progress.prevY = y;
-    this.progress.vx = 0;
-    this.progress.vy = 0;
+    const p = this.config.horizontal ? x : y;
+    this.progress.p = p;
+    this.progress.prevP = p;
+    this.progress.vp = 0;
 
     if ( this.config.transitionActive ) {
-      this.currentProgress.x = x;
-      this.currentProgress.y = y;
-      this.currentProgress.prevX = x;
-      this.currentProgress.prevY = y;
-      this.currentProgress.vx = 0;
-      this.currentProgress.vy = 0;
+      this.currentProgress.p = p;
+      this.currentProgress.prevP = p;
+      this.currentProgress.vp = 0;
     }
 
     this.config.root.scrollTo(x, y);
@@ -122,42 +97,53 @@ export class Scroll {
 
   /**
    * Handle animation frame work.
+   *
+   * @param {boolean} [clearLerpFrame] whether to cancel an existing lerp frame
    */
-  tick () {
-    // choose the object we iterate on
-    const progress = this.config.transitionActive ? this.currentProgress : this.progress;
+  tick (clearLerpFrame) {
+    const hasLerp = this.config.transitionActive;
 
     // if transition is active interpolate to next point
-    if (this.config.transitionActive) {
+    if (hasLerp) {
       this.lerp();
     }
 
+    // choose the object we iterate on
+    const progress = hasLerp ? this.currentProgress : this.progress;
+
     if (this.config.velocityActive) {
-      const dx = progress.x - progress.prevX;
-      const dy = progress.y - progress.prevY;
-      const factorX = dx < 0 ? -1 : 1;
-      const factorY = dy < 0 ? -1 : 1;
-      progress.vx = Math.min(this.config.velocityMax, Math.abs(dx)) / this.config.velocityMax * factorX;
-      progress.vy = Math.min(this.config.velocityMax, Math.abs(dy)) / this.config.velocityMax * factorY;
+      const dp = progress.p - progress.prevP;
+      const factorP = dp < 0 ? -1 : 1;
+      progress.vp = Math.min(this.config.velocityMax, Math.abs(dp)) / this.config.velocityMax * factorP;
     }
 
-    const progress_ = this.config.transitionActive
-      ? this.currentProgress
-      : this.progress
-
     // update effect
-    this.effect.tick(progress_);
+    this.effect.tick(progress);
 
-    progress_.prevX = progress.x;
-    progress_.prevY = progress.y;
+    if (hasLerp && (progress.p !== this.progress.p)) {
+      if (clearLerpFrame && this._lerpFrameId) {
+        window.cancelAnimationFrame(this._lerpFrameId);
+      }
+
+      this._lerpFrameId = window.requestAnimationFrame(() => this.tick());
+    }
+
+    progress.prevP = progress.p;
   }
 
   /**
    * Calculate current progress.
    */
   lerp () {
-    this.currentProgress.x = lerp(this.currentProgress.x, this.progress.x, 1 - this.config.transitionFriction);
-    this.currentProgress.y = lerp(this.currentProgress.y, this.progress.y, 1 - this.config.transitionFriction);
+    this.currentProgress.p = lerp(this.currentProgress.p, this.progress.p, 1 - this.config.transitionFriction, this.config.transitionEpsilon);
+
+    if (this.config.transitionEpsilon) {
+      const deltaP = this.progress.p - this.currentProgress.p;
+
+      if (Math.abs(deltaP) < this.config.transitionEpsilon) {
+        this.currentProgress.p = this.progress.p;
+      }
+    }
   }
 
   /**
@@ -197,26 +183,20 @@ export class Scroll {
     this.effect && this.effect.destroy();
     this.effect = null;
   }
-
-  /**
-   * Toggle scenes with a map of scene.id to a boolean representing whether that scene is active.
-   *
-   * @param {object} sceneMap
-   */
-  toggleScenes (sceneMap) {
-    this.effect && this.effect.toggleScenes(sceneMap);
-  }
 }
 
 /**
  * @typedef {object} scrollConfig
+ * @property {boolean} [horizontal] whether to use the horizontal axis. Defaults to `false`.
  * @property {boolean} [transitionActive] whether to animate effect progress.
  * @property {number} [transitionFriction] between 0 to 1, amount of friction effect in the transition. 1 being no movement and 0 as no friction. Defaults to 0.4.
  * @property {boolean} [velocityActive] whether to calculate velocity with progress.
  * @property {number} [velocityMax] max possible value for velocity. Velocity value will be normalized according to this number, so it is kept between 0 and 1. Defaults to 1.
  * @property {boolean} [observeSize] whether to observe size changes of `container`. Defaults to `true`.
- * @property {boolean} [observeViewport] whether to observe entry/exit of scenes into viewport for disabling/enabling them. Defaults to `true`.
+ * @property {boolean} [observeViewportEntry] whether to observe entry/exit of scenes into viewport for disabling/enabling them. Defaults to `true`.
  * @property {boolean} [viewportRootMargin] `rootMargin` option to be used for viewport observation. Defaults to `'7% 7%'`.
+ * @property {boolean} [observeViewportResize] whether to observe resize of the visual viewport. Defaults to `false`.
+ * @property {boolean} [observeSourcesResize] whether to observe resize of view-timeline source elements. Defaults to `false`.
  * @property {Element|Window} [root] the scrollable element, defaults to window.
  * @property {Element} [wrapper] element to use as the fixed, viewport sized layer, that clips and holds the scroll content container. If not provided, no setup is done.
  * @property {Element|null} [container] element to use as the container for the scrolled content. If not provided assuming native scroll is desired.
@@ -235,7 +215,7 @@ export class Scroll {
  * @property {boolean} [pauseDuringSnap] whether to pause the effect during snap points, effectively ignoring scroll during duration of scroll snapping.
  * @property {boolean} [disabled] whether to perform updates on the scene. Defaults to false.
  * @property {Element} [viewSource] an element to be used for observing intersection with viewport for disabling/enabling the scene, or the source of a ViewTimeline if scene start/end are provided as ranges.
- * @property {string} [id] mandatory only if you want to perform actions on scenes, e.g. toggling disabled.
+ * @property {boolean} [observeViewEntry] whether to observe
  */
 
 /**
