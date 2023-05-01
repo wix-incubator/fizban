@@ -226,7 +226,7 @@ export function getController (config) {
     }
 
     /*
-     * Setup wrapper element and reset progress.
+     * Setup wrapper element
      */
     if (wrapper) {
       if (!wrapper.contains(container)) {
@@ -246,9 +246,9 @@ export function getController (config) {
         overflow: 'hidden'
       });
 
-      // get current scroll position (support window, element and window in IE)
-      let x = root.scrollX || root.pageXOffset || root.scrollLeft || 0;
-      let y = root.scrollY || root.pageYOffset || root.scrollTop || 0;
+      // get current scroll position (support window or element)
+      let x = root.scrollX || root.scrollLeft || 0;
+      let y = root.scrollY || root.scrollTop || 0;
       let p = horizontal ? x : y;
 
       // increment current scroll position by accumulated snap point durations

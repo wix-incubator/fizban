@@ -2,6 +2,15 @@ import test from 'ava';
 import './mocks.js';
 import { Scroll } from '../src/Scroll.js';
 
+test.beforeEach(() => {
+  window.scrollY = 0;
+  window.intersections.length = 0;
+  window.animationFrameHandlers.length = 0;
+  window.intersectionEntries.length = 0;
+  window.eventListeners.scroll.clear()
+  window.eventListeners.resize.clear()
+})
+
 test('constructor :: empty', t => {
   const scroll = new Scroll();
 

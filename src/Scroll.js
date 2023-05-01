@@ -59,11 +59,13 @@ export class Scroll {
   }
 
   /**
-   * Setup event and effect.
+   * Setup event and effect, and reset progress and frame.
    */
   start () {
     this.setupEffect();
     this.setupEvent();
+    this.resetProgress();
+    this.tick();
   }
 
   /**
@@ -76,11 +78,15 @@ export class Scroll {
   /**
    * Reset progress in the DOM and inner state to given x and y.
    *
-   * @param {Object} progress
-   * @param {number} progress.x
-   * @param {number} progress.y
+   * @param {Object} [scrollPosition]
+   * @param {number} [scrollPosition.x]
+   * @param {number} [scrollPosition.y]
    */
-  resetProgress ({x, y}) {
+  resetProgress (scrollPosition = {}) {
+    // get current scroll position (support window, element)
+    const root = this.config.root;
+    const x = scrollPosition.x || scrollPosition.x === 0 ? scrollPosition.x : root.scrollX || root.scrollLeft || 0;
+    const y = scrollPosition.y || scrollPosition.y === 0 ? scrollPosition.y : root.scrollY || root.scrollTop || 0;
     const p = this.config.horizontal ? x : y;
     this.progress.p = p;
     this.progress.prevP = p;
@@ -92,7 +98,9 @@ export class Scroll {
       this.currentProgress.vp = 0;
     }
 
-    this.config.root.scrollTo(x, y);
+    if (scrollPosition) {
+      this.config.root.scrollTo(x, y);
+    }
   }
 
   /**
