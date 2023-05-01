@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset='utf-8'>
-  <title>fizban 0.3.1 | Documentation</title>
+  <title>fizban 0.3.2 | Documentation</title>
   <meta name='description' content='Tiny library for performant scroll-driven effects'>
   <meta name='viewport' content='width=device-width,initial-scale=1'>
   <link href='assets/bass.css' rel='stylesheet'>
@@ -15,7 +15,7 @@
       <div id='split-left' class='overflow-auto fs0 height-viewport-100'>
         <div class='py1 px2'>
           <h3 class='mb0 no-anchor'>fizban</h3>
-          <div class='mb1'><code>0.3.1</code></div>
+          <div class='mb1'><code>0.3.2</code></div>
           <input
             placeholder='Filter'
             id='filter-input'
@@ -408,7 +408,7 @@ scroll.<span class="hljs-title function_">start</span>();</pre>
 
   
 
-  <p>Setup event and effect.</p>
+  <p>Setup event and effect, and reset progress and frame.</p>
 
     <div class='pre p1 fill-light mt0'>start()</div>
   
@@ -498,7 +498,7 @@ scroll.<span class="hljs-title function_">start</span>();</pre>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>resetProgress(progress)</span>
+            <span class='code strong strong truncate'>resetProgress(scrollPosition = {})</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -508,7 +508,7 @@ scroll.<span class="hljs-title function_">start</span>();</pre>
 
   <p>Reset progress in the DOM and inner state to given x and y.</p>
 
-    <div class='pre p1 fill-light mt0'>resetProgress(progress: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</div>
+    <div class='pre p1 fill-light mt0'>resetProgress(scrollPosition: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>?)</div>
   
   
 
@@ -525,7 +525,8 @@ scroll.<span class="hljs-title function_">start</span>();</pre>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>progress</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+            <span class='code bold'>scrollPosition</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>?
+            = <code>{}</code>)</code>
 	    
           </div>
           
@@ -543,7 +544,7 @@ scroll.<span class="hljs-title function_">start</span>();</pre>
             <tbody class='mt1'>
               
                 <tr>
-  <td class='break-word'><span class='code bold'>progress.x</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>
+  <td class='break-word'><span class='code bold'>scrollPosition.x</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?</code>
   </td>
   <td class='break-word'><span></span></td>
 </tr>
@@ -551,7 +552,7 @@ scroll.<span class="hljs-title function_">start</span>();</pre>
 
               
                 <tr>
-  <td class='break-word'><span class='code bold'>progress.y</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>
+  <td class='break-word'><span class='code bold'>scrollPosition.y</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?</code>
   </td>
   <td class='break-word'><span></span></td>
 </tr>
