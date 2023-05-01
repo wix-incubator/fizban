@@ -1,3 +1,10 @@
+declare type RangeName = 'entry' | 'exit' | 'contain' | 'cover';
+
+declare type RangeOffset = {
+  name?: RangeName;
+  offset?: number;
+};
+
 declare type scrollConfig = {
   scenes: ScrollScene;
   transitionActive?: boolean;
@@ -6,9 +13,9 @@ declare type scrollConfig = {
 
 declare type ScrollScene = {
   effect: (scene: ScrollScene, progress: number) => void;
-  start?: number;
-  duration?: number;
-  end?: number;
+  start?: RangeOffset;
+  duration?: number | RangeName;
+  end?: RangeOffset;
   disabled?: boolean;
   viewSource?: Element;
 }
