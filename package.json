@@ -2,7 +2,7 @@
   "name": "fizban",
   "version": "0.4.2",
   "description": "Tiny library for performant scroll-driven effects",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "module": "index.js",
   "types": "types.d.ts",
   "type": "module",

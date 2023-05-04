@@ -4,7 +4,7 @@ import filesize from 'rollup-plugin-filesize';
 export default {
   input: 'index.js',
   output: {
-    file: 'dist/index.js',
+    file: 'dist/index.cjs',
     format: 'cjs'
   },
   plugins: [
