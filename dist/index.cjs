@@ -171,18 +171,6 @@ function getIsSticky (style) {
 }
 
 /**
- * Check whether an element in scroll direction is a scroll container.
- *
- * @param {CSSStyleDeclaration} style
- * @param {boolean} isHorizontal
- * @return {boolean}
- */
-function getIsScrollContainer (style, isHorizontal) {
-  const overflow = style[`overflow-${isHorizontal ? 'x' : 'y'}`];
-  return overflow !== 'visible' && overflow !== 'clip';
-}
-
-/**
  * Get offset of an element in scroll direction.
  *
  * @param {CSSStyleDeclaration} style
@@ -208,19 +196,25 @@ function getRectStart (element, isHorizontal) {
  * Returns a converted scene data from ranges into offsets in pixels.
  *
  * @param {ScrollScene} scene
+ * @param {Window|HTMLElement} root
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
  * @return {ScrollScene}
  */
-function getTransformedScene (scene, viewportSize, isHorizontal) {
+function getTransformedScene (scene, root, viewportSize, isHorizontal) {
   const element = scene.viewSource;
   let parent = element.offsetParent;
   let elementLayoutStart = getRectStart(element, isHorizontal);
   const size = (isHorizontal ? element.offsetWidth : element.offsetHeight) || 0;
   const offsetTree = [{element, offset: elementLayoutStart, size}];
-  let hasScrollParent = false;
 
   while (parent) {
+    if (parent === root) {
+      offsetTree.push({element: parent, offset: 0});
+      // if we're at the root don't add its own offset
+      break;
+    }
+
     // get the base offset of the source element - before adding sticky intervals
     const offset = getRectStart(parent, isHorizontal);
     elementLayoutStart += offset;
@@ -245,41 +239,36 @@ function getTransformedScene (scene, viewportSize, isHorizontal) {
 
     const nodeStyle = window.getComputedStyle(node.element);
 
-    if (!hasScrollParent) {
-      const isSticky = getIsSticky(nodeStyle);
+    const isSticky = getIsSticky(nodeStyle);
 
-      if (isSticky) {
-        // TODO: specified offset could be in % or vh, so need to recalc on parent/window resize
-        // stuckStart is the amount needed to scroll to reach the stuck state
-        const stuckStart = accumulatedOffset - getStickyOffset(nodeStyle, isHorizontal);
+    if (isSticky) {
+      // stuckStart is the amount needed to scroll to reach the stuck state
+      const stuckStart = accumulatedOffset - getStickyOffset(nodeStyle, isHorizontal);
 
-        // check if stuckStart is before the point of scroll where the timeline starts
-        const isBeforeStart = stuckStart < transformedScene.start;
-        // check if stuckStart is inside the timeline's active scroll interval
-        const isInsideDuration = !isBeforeStart && stuckStart <= transformedScene.end;
+      // check if stuckStart is before the point of scroll where the timeline starts
+      const isBeforeStart = stuckStart < transformedScene.start;
+      // check if stuckStart is inside the timeline's active scroll interval
+      const isInsideDuration = !isBeforeStart && stuckStart <= transformedScene.end;
 
-        let extraOffset = 0;
-        const parent = offsetTree[index - 1]?.element;
+      let extraOffset = 0;
+      const parent = offsetTree[index - 1]?.element;
 
-        if (parent) {
-          if (isBeforeStart || isInsideDuration) {
-            const parentSize = (isHorizontal ? parent.offsetWidth : parent.offsetHeight) || 0;
-            const elementOffset = node.offset;
-            const elementSize = (isHorizontal ? node.element.offsetWidth : node.element.offsetHeight) || 0;
+      if (parent) {
+        if (isBeforeStart || isInsideDuration) {
+          const parentSize = (isHorizontal ? parent.offsetWidth : parent.offsetHeight) || 0;
+          const elementOffset = node.offset;
+          const elementSize = (isHorizontal ? node.element.offsetWidth : node.element.offsetHeight) || 0;
 
-            extraOffset = parentSize - (elementOffset + elementSize);
-            accumulatedOffset += extraOffset;
-            transformedScene.end += extraOffset;
-          }
+          extraOffset = parentSize - (elementOffset + elementSize);
+          accumulatedOffset += extraOffset;
+          transformedScene.end += extraOffset;
+        }
 
-          if (isBeforeStart) {
-            transformedScene.start += extraOffset;
-          }
+        if (isBeforeStart) {
+          transformedScene.start += extraOffset;
         }
       }
     }
-
-    hasScrollParent = hasScrollParent && getIsScrollContainer(nodeStyle, isHorizontal);
   });
 
   return transformedScene;
@@ -360,17 +349,22 @@ function calcProgress (p, start, end, duration) {
 
 /**
  *
+ * @param {Window|HTMLElement} root
  * @param {boolean} isHorizontal
  * @return {number}
  */
-function getViewportSize (isHorizontal) {
-  return window.visualViewport
-    ? isHorizontal
-      ? window.visualViewport.width
-      : window.visualViewport.height
-    : isHorizontal
-      ? window.document.documentElement.clientWidth
-      : window.document.documentElement.clientHeight
+function getViewportSize (root, isHorizontal) {
+  if (root === window) {
+    return window.visualViewport
+      ? isHorizontal
+        ? window.visualViewport.width
+        : window.visualViewport.height
+      : isHorizontal
+        ? window.document.documentElement.clientWidth
+        : window.document.documentElement.clientHeight;
+  }
+
+  return isHorizontal ? root.clientWidth : root.clientHeight;
 }
 
 /*
@@ -392,7 +386,7 @@ function getController (config) {
   const wrapper = _config.wrapper;
   const horizontal = _config.horizontal;
   const scenesByElement = new WeakMap();
-  let viewportSize = getViewportSize(horizontal);
+  let viewportSize = getViewportSize(root, horizontal);
 
   /*
    * Prepare snap points data.
@@ -410,7 +404,7 @@ function getController (config) {
   const extraScroll = snaps.reduce((acc, snap) => acc + (snap[1] - snap[0]), 0);
 
   let lastP;
-  let containerResizeObserver, viewportObserver, rangesResizeObserver;
+  let containerResizeObserver, viewportObserver, rangesResizeObserver, viewportResizeHandler, scrollportResizeObserver;
   const rangesToObserve = [];
 
   /*
@@ -420,7 +414,7 @@ function getController (config) {
     scene.index = index;
 
     if (scene.viewSource && (typeof scene.duration === 'string' || scene.start?.name)) {
-      scene = getTransformedScene(scene, viewportSize, horizontal);
+      scene = getTransformedScene(scene, root, viewportSize, horizontal);
 
       if (_config.observeSourcesResize) {
         rangesToObserve.push(scene);
@@ -462,14 +456,12 @@ function getController (config) {
       });
     }
 
-    let viewportResizeHandler;
-
     if (_config.observeViewportResize) {
       viewportResizeHandler = debounce(function () {
-        viewportSize = getViewportSize(horizontal);
+        viewportSize = getViewportSize(root, horizontal);
 
         const newRanges = rangesToObserve.map(scene => {
-          const newScene = getTransformedScene(scene, viewportSize, horizontal);
+          const newScene = getTransformedScene(scene, root, viewportSize, horizontal);
 
           _config.scenes[scene.index] = newScene;
 
@@ -481,7 +473,13 @@ function getController (config) {
         rangesToObserve.push(...newRanges);
       }, VIEWPORT_RESIZE_INTERVAL);
 
-      (window.visualViewport || window).addEventListener('resize', viewportResizeHandler);
+      if (root === window) {
+        (window.visualViewport || window).addEventListener('resize', viewportResizeHandler);
+      }
+      else if (window.ResizeObserver) {
+        scrollportResizeObserver = new window.ResizeObserver(viewportResizeHandler);
+        scrollportResizeObserver.observe(root, {box: 'border-box'});
+      }
     }
   }
 
@@ -669,6 +667,16 @@ function getController (config) {
     if (rangesResizeObserver) {
       rangesResizeObserver.disconnect();
       rangesResizeObserver = null;
+    }
+
+    if (viewportResizeHandler) {
+      if (scrollportResizeObserver) {
+        scrollportResizeObserver.disconnect();
+        scrollportResizeObserver = null;
+      }
+      else {
+        (window.visualViewport || window).removeEventListener('resize', viewportResizeHandler);
+      }
     }
   }
 

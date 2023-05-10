@@ -391,38 +391,39 @@ test('start :: effect progress :: view ranges :: sticky parent inside interval',
   t.is(progress, 1);
 });
 
-test('start :: effect progress :: view ranges :: sticky element :: with scroll parent', t => {
+test('start :: effect progress :: view ranges :: with scroll parent', t => {
   const element = {
     offsetHeight: 50,
     offsetTop: 100,
     offsetParent: {
       offsetTop: 50,
-      offsetHeight: 150,
-      offsetParent: {
-        offsetTop: 0,
-        offsetHeight: 300,
-      },
+      offsetHeight: 100,
+      clientHeight: 100,
       style: {
         'overflow-y': 'hidden'
+      },
+      addEventListener: window.addEventListener,
+      scrollTo(x, y) {
+        root.scrollLeft = x;
+        root.scrollTop = y;
+
+        window.eventListeners.scroll.forEach(listener => listener());
       }
-    },
-    style: {
-      position: 'sticky',
-      top: '0px'
     }
   };
+  const root = element.offsetParent;
 
   let progress = 0;
 
   const scroll = new Scroll({
-    root: window,
+    root,
     scenes: [
       {
         effect(s, p) {
           progress = p;
         },
-        start: {name: 'entry', offset: 0}, // 100
-        end: {name: 'contain', offset: 100}, // 150
+        start: {name: 'entry', offset: 0}, // 0
+        end: {name: 'contain', offset: 100}, // 100
         viewSource: element
       }
     ]
@@ -430,22 +431,98 @@ test('start :: effect progress :: view ranges :: sticky element :: with scroll p
 
   scroll.start();
 
-  window.scrollTo(0, 80);
   window.executeAnimationFrame();
 
   t.is(progress, 0);
 
-  window.scrollTo(0, 100);
+  root.scrollTo(0, 50);
   window.executeAnimationFrame();
 
-  t.is(progress, 0);
+  t.is(progress, 0.5);
 
-  window.scrollTo(0, 150);
+  root.scrollTo(0, 74);
+  window.executeAnimationFrame();
+
+  t.is(progress, 0.74);
+
+  root.scrollTo(0, 100);
   window.executeAnimationFrame();
 
   t.is(progress, 1);
 
-  window.scrollTo(0, 175);
+  root.scrollTo(0, 120);
+  window.executeAnimationFrame();
+
+  t.is(progress, 1);
+});
+
+test.only('start :: effect progress :: view ranges :: sticky element :: with scroll parent', t => {
+  const element = {
+    offsetHeight: 50,
+    offsetTop: 100,
+    offsetParent: {
+      offsetTop: 50,
+      offsetHeight: 200,
+      offsetParent: {
+        clientHeight: 100,
+        offsetHeight: 100,
+        style: {
+          'overflow-y': 'hidden'
+        },
+        addEventListener: window.addEventListener,
+        scrollTo(x, y) {
+          root.scrollLeft = x;
+          root.scrollTop = y;
+
+          window.eventListeners.scroll.forEach(listener => listener());
+        }
+      }
+    },
+    style: {
+      position: 'sticky',
+      top: '50px'
+    }
+  };
+  const root = element.offsetParent.offsetParent;
+
+  let progress = 0;
+
+  const scroll = new Scroll({
+    root,
+    scenes: [
+      {
+        effect(s, p) {
+          progress = p;
+        },
+        start: {name: 'entry', offset: 0}, // 50
+        end: {name: 'contain', offset: 100}, // 200
+        viewSource: element
+      }
+    ]
+  });
+
+  scroll.start();
+
+  window.executeAnimationFrame();
+
+  t.is(progress, 0);
+
+  root.scrollTo(0, 50);
+  window.executeAnimationFrame();
+
+  t.is(progress, 0);
+
+  root.scrollTo(0, 100);
+  window.executeAnimationFrame();
+
+  t.is(+progress.toFixed(2), 0.33);
+
+  root.scrollTo(0, 150);
+  window.executeAnimationFrame();
+
+  t.is(+progress.toFixed(2), 0.67);
+
+  root.scrollTo(0, 200);
   window.executeAnimationFrame();
 
   t.is(progress, 1);

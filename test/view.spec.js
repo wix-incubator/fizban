@@ -24,7 +24,7 @@ test('duration :: entry', t => {
     duration: 'entry'
   });
 
-  const result = getTransformedScene(input, VIEWPORT_SIZE, IS_HORIZONTAL);
+  const result = getTransformedScene(input, null, VIEWPORT_SIZE, IS_HORIZONTAL);
 
   t.is(result.start, -200);
   t.is(result.end, -50);
@@ -39,7 +39,7 @@ test('duration :: contain', t => {
     duration: 'contain'
   });
 
-  const result = getTransformedScene(input, VIEWPORT_SIZE, IS_HORIZONTAL);
+  const result = getTransformedScene(input, null, VIEWPORT_SIZE, IS_HORIZONTAL);
 
   t.is(result.start, -50);
   t.is(result.end, 0);
@@ -54,7 +54,7 @@ test('duration :: exit', t => {
     duration: 'exit'
   });
 
-  const result = getTransformedScene(input, VIEWPORT_SIZE, IS_HORIZONTAL);
+  const result = getTransformedScene(input,  null, VIEWPORT_SIZE, IS_HORIZONTAL);
 
   t.is(result.start, 0);
   t.is(result.end, 150);
@@ -69,7 +69,7 @@ test('duration :: entry :: larger than viewport', t => {
     duration: 'entry'}
   );
 
-  const result = getTransformedScene(input, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL);
+  const result = getTransformedScene(input, null, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL);
 
   t.is(result.start, -50);
   t.is(result.end, 0);
@@ -84,7 +84,7 @@ test('duration :: contain :: larger than viewport', t => {
     duration: 'contain'
   });
 
-  const result = getTransformedScene(input, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL);
+  const result = getTransformedScene(input, null, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL);
 
   t.is(result.start, 0);
   t.is(result.end, 100);
@@ -99,7 +99,7 @@ test('duration :: exit :: larger than viewport', t => {
     duration: 'exit'
   });
 
-  const result = getTransformedScene(input, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL);
+  const result = getTransformedScene(input, null, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL);
 
   t.is(result.start, 100);
   t.is(result.end, 150);
@@ -114,7 +114,7 @@ test('duration :: cover', t => {
     duration: 'cover'
   });
 
-  const result = getTransformedScene(input, VIEWPORT_SIZE, IS_HORIZONTAL);
+  const result = getTransformedScene(input, null, VIEWPORT_SIZE, IS_HORIZONTAL);
 
   t.is(result.start, -200);
   t.is(result.end, 150);
@@ -130,7 +130,7 @@ test('start :: entry 40% & contain 60%', t => {
     end: {name: 'contain', offset: 60}
   });
 
-  const result = getTransformedScene(input, VIEWPORT_SIZE, IS_HORIZONTAL);
+  const result = getTransformedScene(input, null, VIEWPORT_SIZE, IS_HORIZONTAL);
 
   t.is(result.start, -140);
   t.is(result.end, -20);
@@ -146,7 +146,7 @@ test('start :: entry 40% :: end exit 60%', t => {
     end: {name: 'exit', offset: 60}
   });
 
-  const result = getTransformedScene(input, VIEWPORT_SIZE, IS_HORIZONTAL);
+  const result = getTransformedScene(input, null, VIEWPORT_SIZE, IS_HORIZONTAL);
 
   t.is(result.start, -140);
   t.is(result.end, 90);
@@ -162,7 +162,7 @@ test('start :: entry 40% :: duration 160px', t => {
     duration: 160
   });
 
-  const result = getTransformedScene(input, VIEWPORT_SIZE, IS_HORIZONTAL);
+  const result = getTransformedScene(input, null, VIEWPORT_SIZE, IS_HORIZONTAL);
 
   t.is(result.start, -140);
   t.is(result.end, 20);
@@ -178,7 +178,7 @@ test('start :: entry 40% & contain 60% :: larger than viewport', t => {
     end: {name: 'contain', offset: 60}
   });
 
-  const result = getTransformedScene(input, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL);
+  const result = getTransformedScene(input, null, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL);
 
   t.is(result.start, -30);
   t.is(result.end, 60);
@@ -194,7 +194,7 @@ test('start :: entry 40% :: end exit 60% :: larger than viewport', t => {
     end: {name: 'exit', offset: 60}
   });
 
-  const result = getTransformedScene(input, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL);
+  const result = getTransformedScene(input, null, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL);
 
   t.is(result.start, -30);
   t.is(result.end, 130);
@@ -210,7 +210,7 @@ test('start :: entry 40% :: duration 160px :: larger than viewport', t => {
     duration: 160
   });
 
-  const result = getTransformedScene(input, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL);
+  const result = getTransformedScene(input, null, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL);
 
   t.is(result.start, -30);
   t.is(result.end, 130);

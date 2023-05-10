@@ -76,17 +76,22 @@ function calcProgress (p, start, end, duration) {
 
 /**
  *
+ * @param {Window|HTMLElement} root
  * @param {boolean} isHorizontal
  * @return {number}
  */
-function getViewportSize (isHorizontal) {
-  return window.visualViewport
-    ? isHorizontal
-      ? window.visualViewport.width
-      : window.visualViewport.height
-    : isHorizontal
-      ? window.document.documentElement.clientWidth
-      : window.document.documentElement.clientHeight
+function getViewportSize (root, isHorizontal) {
+  if (root === window) {
+    return window.visualViewport
+      ? isHorizontal
+        ? window.visualViewport.width
+        : window.visualViewport.height
+      : isHorizontal
+        ? window.document.documentElement.clientWidth
+        : window.document.documentElement.clientHeight;
+  }
+
+  return isHorizontal ? root.clientWidth : root.clientHeight;
 }
 
 /*
@@ -108,7 +113,7 @@ export function getController (config) {
   const wrapper = _config.wrapper;
   const horizontal = _config.horizontal;
   const scenesByElement = new WeakMap();
-  let viewportSize = getViewportSize(horizontal);
+  let viewportSize = getViewportSize(root, horizontal);
 
   /*
    * Prepare snap points data.
@@ -126,7 +131,7 @@ export function getController (config) {
   const extraScroll = snaps.reduce((acc, snap) => acc + (snap[1] - snap[0]), 0);
 
   let lastP;
-  let containerResizeObserver, viewportObserver, rangesResizeObserver, viewportResizeHandler;
+  let containerResizeObserver, viewportObserver, rangesResizeObserver, viewportResizeHandler, scrollportResizeObserver;
   const rangesToObserve = [];
 
   /*
@@ -136,7 +141,7 @@ export function getController (config) {
     scene.index = index;
 
     if (scene.viewSource && (typeof scene.duration === 'string' || scene.start?.name)) {
-      scene = getTransformedScene(scene, viewportSize, horizontal);
+      scene = getTransformedScene(scene, root, viewportSize, horizontal);
 
       if (_config.observeSourcesResize) {
         rangesToObserve.push(scene);
@@ -178,14 +183,12 @@ export function getController (config) {
       });
     }
 
-    let viewportResizeHandler;
-
     if (_config.observeViewportResize) {
       viewportResizeHandler = debounce(function () {
-        viewportSize = getViewportSize(horizontal);
+        viewportSize = getViewportSize(root, horizontal);
 
         const newRanges = rangesToObserve.map(scene => {
-          const newScene = getTransformedScene(scene, viewportSize, horizontal);
+          const newScene = getTransformedScene(scene, root, viewportSize, horizontal);
 
           _config.scenes[scene.index] = newScene;
 
@@ -197,7 +200,13 @@ export function getController (config) {
         rangesToObserve.push(...newRanges);
       }, VIEWPORT_RESIZE_INTERVAL);
 
-      (window.visualViewport || window).addEventListener('resize', viewportResizeHandler);
+      if (root === window) {
+        (window.visualViewport || window).addEventListener('resize', viewportResizeHandler);
+      }
+      else if (window.ResizeObserver) {
+        scrollportResizeObserver = new window.ResizeObserver(viewportResizeHandler);
+        scrollportResizeObserver.observe(root, {box: 'border-box'});
+      }
     }
   }
 
@@ -388,7 +397,13 @@ export function getController (config) {
     }
 
     if (viewportResizeHandler) {
-      (window.visualViewport || window).removeEventListener('resize', viewportResizeHandler);
+      if (scrollportResizeObserver) {
+        scrollportResizeObserver.disconnect();
+        scrollportResizeObserver = null;
+      }
+      else {
+        (window.visualViewport || window).removeEventListener('resize', viewportResizeHandler);
+      }
     }
   }
 

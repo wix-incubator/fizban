@@ -89,18 +89,6 @@ function getIsSticky (style) {
 }
 
 /**
- * Check whether an element in scroll direction is a scroll container.
- *
- * @param {CSSStyleDeclaration} style
- * @param {boolean} isHorizontal
- * @return {boolean}
- */
-function getIsScrollContainer (style, isHorizontal) {
-  const overflow = style[`overflow-${isHorizontal ? 'x' : 'y'}`];
-  return overflow !== 'visible' && overflow !== 'clip';
-}
-
-/**
  * Get offset of an element in scroll direction.
  *
  * @param {CSSStyleDeclaration} style
@@ -126,19 +114,25 @@ function getRectStart (element, isHorizontal) {
  * Returns a converted scene data from ranges into offsets in pixels.
  *
  * @param {ScrollScene} scene
+ * @param {Window|HTMLElement} root
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
  * @return {ScrollScene}
  */
-export function getTransformedScene (scene, viewportSize, isHorizontal) {
+export function getTransformedScene (scene, root, viewportSize, isHorizontal) {
   const element = scene.viewSource;
   let parent = element.offsetParent;
   let elementLayoutStart = getRectStart(element, isHorizontal);
   const size = (isHorizontal ? element.offsetWidth : element.offsetHeight) || 0;
   const offsetTree = [{element, offset: elementLayoutStart, size}];
-  let hasScrollParent = false;
 
   while (parent) {
+    if (parent === root) {
+      offsetTree.push({element: parent, offset: 0});
+      // if we're at the root don't add its own offset
+      break;
+    }
+
     // get the base offset of the source element - before adding sticky intervals
     const offset = getRectStart(parent, isHorizontal);
     elementLayoutStart += offset
@@ -165,41 +159,36 @@ export function getTransformedScene (scene, viewportSize, isHorizontal) {
 
     const nodeStyle = window.getComputedStyle(node.element);
 
-    if (!hasScrollParent) {
-      const isSticky = getIsSticky(nodeStyle);
+    const isSticky = getIsSticky(nodeStyle);
 
-      if (isSticky) {
-        // TODO: specified offset could be in % or vh, so need to recalc on parent/window resize
-        // stuckStart is the amount needed to scroll to reach the stuck state
-        const stuckStart = accumulatedOffset - getStickyOffset(nodeStyle, isHorizontal);
+    if (isSticky) {
+      // stuckStart is the amount needed to scroll to reach the stuck state
+      const stuckStart = accumulatedOffset - getStickyOffset(nodeStyle, isHorizontal);
 
-        // check if stuckStart is before the point of scroll where the timeline starts
-        const isBeforeStart = stuckStart < transformedScene.start;
-        // check if stuckStart is inside the timeline's active scroll interval
-        const isInsideDuration = !isBeforeStart && stuckStart <= transformedScene.end;
+      // check if stuckStart is before the point of scroll where the timeline starts
+      const isBeforeStart = stuckStart < transformedScene.start;
+      // check if stuckStart is inside the timeline's active scroll interval
+      const isInsideDuration = !isBeforeStart && stuckStart <= transformedScene.end;
 
-        let extraOffset = 0;
-        const parent = offsetTree[index - 1]?.element;
+      let extraOffset = 0;
+      const parent = offsetTree[index - 1]?.element;
 
-        if (parent) {
-          if (isBeforeStart || isInsideDuration) {
-            const parentSize = (isHorizontal ? parent.offsetWidth : parent.offsetHeight) || 0;
-            const elementOffset = node.offset;
-            const elementSize = (isHorizontal ? node.element.offsetWidth : node.element.offsetHeight) || 0;
+      if (parent) {
+        if (isBeforeStart || isInsideDuration) {
+          const parentSize = (isHorizontal ? parent.offsetWidth : parent.offsetHeight) || 0;
+          const elementOffset = node.offset;
+          const elementSize = (isHorizontal ? node.element.offsetWidth : node.element.offsetHeight) || 0;
 
-            extraOffset = parentSize - (elementOffset + elementSize);
-            accumulatedOffset += extraOffset;
-            transformedScene.end += extraOffset;
-          }
+          extraOffset = parentSize - (elementOffset + elementSize);
+          accumulatedOffset += extraOffset;
+          transformedScene.end += extraOffset;
+        }
 
-          if (isBeforeStart) {
-            transformedScene.start += extraOffset;
-          }
+        if (isBeforeStart) {
+          transformedScene.start += extraOffset;
         }
       }
     }
-
-    hasScrollParent = hasScrollParent && getIsScrollContainer(nodeStyle, isHorizontal);
   });
 
   return transformedScene;
