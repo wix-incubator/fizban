@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset='utf-8'>
-  <title>fizban 0.4.3 | Documentation</title>
+  <title>fizban 0.4.4 | Documentation</title>
   <meta name='description' content='Tiny library for performant scroll-driven effects'>
   <meta name='viewport' content='width=device-width,initial-scale=1'>
   <link href='assets/bass.css' rel='stylesheet'>
@@ -15,7 +15,7 @@
       <div id='split-left' class='overflow-auto fs0 height-viewport-100'>
         <div class='py1 px2'>
           <h3 class='mb0 no-anchor'>fizban</h3>
-          <div class='mb1'><code>0.4.3</code></div>
+          <div class='mb1'><code>0.4.4</code></div>
           <input
             placeholder='Filter'
             id='filter-input'
@@ -154,16 +154,6 @@
                   href='#rangename'
                   class="">
                   RangeName
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#snappoint'
-                  class="">
-                  SnapPoint
                   
                 </a>
                 
@@ -1029,17 +1019,6 @@ scroll.<span class="hljs-title function_">start</span>();</pre>
         </div>
       
         <div class='space-bottom0'>
-          <span class='code bold'>observeSize</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</code>
-          : whether to observe size changes of 
-<code>container</code>
-. Defaults to 
-<code>true</code>
-.
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
           <span class='code bold'>observeViewportEntry</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</code>
           : whether to observe entry/exit of scenes into viewport for disabling/enabling them. Defaults to 
 <code>true</code>
@@ -1079,27 +1058,6 @@ scroll.<span class="hljs-title function_">start</span>();</pre>
         <div class='space-bottom0'>
           <span class='code bold'>root</span> <code class='quiet'>((<a href="https://developer.mozilla.org/docs/Web/API/Element">Element</a> | <a href="https://developer.mozilla.org/docs/Web/API/Window">Window</a>)?)</code>
           : the scrollable element, defaults to window.
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>wrapper</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/API/Element">Element</a>?)</code>
-          : element to use as the fixed, viewport sized layer, that clips and holds the scroll content container. If not provided, no setup is done.
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>container</span> <code class='quiet'>((<a href="https://developer.mozilla.org/docs/Web/API/Element">Element</a> | null)?)</code>
-          : element to use as the container for the scrolled content. If not provided assuming native scroll is desired.
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>snaps</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#snappoint">SnapPoint</a>>?)</code>
-          : list of scroll snap points.
 
           
         </div>
@@ -1188,13 +1146,6 @@ scroll.<span class="hljs-title function_">start</span>();</pre>
         <div class='space-bottom0'>
           <span class='code bold'>end</span> <code class='quiet'>((<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a> | <a href="#rangeoffset">RangeOffset</a>)?)</code>
           : scroll position in pixels where effect ends. Defaults to start + duration.
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>pauseDuringSnap</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</code>
-          : whether to pause the effect during snap points, effectively ignoring scroll during duration of scroll snapping.
 
           
         </div>
@@ -1435,86 +1386,6 @@ scroll.<span class="hljs-title function_">start</span>();</pre>
 
   
 
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-          <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='snappoint'>
-      SnapPoint
-    </h3>
-    
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>SnapPoint</div>
-  
-    <p>
-      Type:
-      <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>
-    </p>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Properties</div>
-    <div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>start</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : scroll position in pixels where virtual scroll starts snapping.
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>duration</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?)</code>
-          : duration in pixels for virtual scroll snapping. Defaults to end - start.
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>end</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?)</code>
-          : scroll position in pixels where virtual scroll starts snapping. Defaults to start + duration.
-
-          
-        </div>
-      
-    </div>
   
 
   

@@ -201,17 +201,11 @@ export class Scroll {
  * @property {number} [transitionFriction] between 0 to 1, amount of friction effect in the transition. 1 being no movement and 0 as no friction. Defaults to 0.4.
  * @property {boolean} [velocityActive] whether to calculate velocity with progress.
  * @property {number} [velocityMax] max possible value for velocity. Velocity value will be normalized according to this number, so it is kept between 0 and 1. Defaults to 1.
- * @property {boolean} [observeSize] whether to observe size changes of `container`. Defaults to `true`.
  * @property {boolean} [observeViewportEntry] whether to observe entry/exit of scenes into viewport for disabling/enabling them. Defaults to `true`.
  * @property {boolean} [viewportRootMargin] `rootMargin` option to be used for viewport observation. Defaults to `'7% 7%'`.
  * @property {boolean} [observeViewportResize] whether to observe resize of the visual viewport. Defaults to `false`.
  * @property {boolean} [observeSourcesResize] whether to observe resize of view-timeline source elements. Defaults to `false`.
  * @property {Element|Window} [root] the scrollable element, defaults to window.
- * @property {Element} [wrapper] element to use as the fixed, viewport sized layer, that clips and holds the scroll content container. If not provided, no setup is done.
- * @property {Element|null} [container] element to use as the container for the scrolled content. If not provided assuming native scroll is desired.
- * @property {SnapPoint[]} [snaps] list of scroll snap points.
- * @property {function(container: HTMLElement, wrapper: HTMLElement|undefined, x: number, y: number)} [scrollHandler] if using a container, this allows overriding the function used for scrolling the content. Defaults to setting `style.transform`.
- * @property {function(container: HTMLElement, wrapper: HTMLElement|undefined, x: number, y: number)} [scrollClear] if using a container, this allows overriding the function used for clearing content scrolling side-effects when effect is removed. Defaults to clearing `container.style.transform`.
  */
 
 /**
@@ -222,7 +216,6 @@ export class Scroll {
  * @property {number|RangeOffset} start scroll position in pixels where effect starts.
  * @property {number|RangeName} [duration] duration of effect in pixels. Defaults to end - start.
  * @property {number|RangeOffset} [end] scroll position in pixels where effect ends. Defaults to start + duration.
- * @property {boolean} [pauseDuringSnap] whether to pause the effect during snap points, effectively ignoring scroll during duration of scroll snapping.
  * @property {boolean} [disabled] whether to perform updates on the scene. Defaults to false.
  * @property {Element} [viewSource] an element to be used for observing intersection with viewport for disabling/enabling the scene, or the source of a ViewTimeline if scene start/end are provided as ranges.
  * @property {boolean} [observeViewEntry] whether to observe
@@ -233,13 +226,6 @@ export class Scroll {
  * @param {ScrollScene} scene
  * @param {number} progress
  * @param {number} velocity
- */
-
-/**
- * @typedef {Object} SnapPoint
- * @property {number} start scroll position in pixels where virtual scroll starts snapping.
- * @property {number} [duration] duration in pixels for virtual scroll snapping. Defaults to end - start.
- * @property {number} [end] scroll position in pixels where virtual scroll starts snapping. Defaults to start + duration.
  */
 
 /**

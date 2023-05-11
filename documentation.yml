@@ -5,7 +5,6 @@ toc:
   - EffectCallback
   - RangeOffset
   - RangeName
-  - SnapPoint
   - name: utilities
     children:
       - lerp
