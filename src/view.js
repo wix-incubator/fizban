@@ -96,6 +96,7 @@ function getIsSticky (style) {
  * @return {number}
  */
 function getStickyOffset (style, isHorizontal) {
+  // TODO: get also right/bottom offsets
   return parseInt(isHorizontal ? style.left : style.top);
 }
 
@@ -103,11 +104,23 @@ function getStickyOffset (style, isHorizontal) {
  *
  * @param {HTMLElement} element
  * @param {boolean} isHorizontal
+ * @param {boolean} isSticky
  * @return {number}
  */
-function getRectStart (element, isHorizontal) {
+function getRectStart (element, isHorizontal, isSticky) {
   // TODO: implement support for RTL writing-mode
-  return (isHorizontal ? element.offsetLeft : element.offsetTop) || 0;
+  if (isSticky) {
+    element.style.position = 'static';
+  }
+
+  const result = (isHorizontal ? element.offsetLeft : element.offsetTop) || 0;
+
+  if (isSticky) {
+    // assuming the sticky position came from a stylesheet and not set inline
+    element.style.position = null;
+  }
+
+  return result
 }
 
 /**
@@ -121,10 +134,19 @@ function getRectStart (element, isHorizontal) {
  */
 export function getTransformedScene (scene, root, viewportSize, isHorizontal) {
   const element = scene.viewSource;
+  const elementStyle = window.getComputedStyle(element);
+  const isElementSticky = getIsSticky(elementStyle);
+
   let parent = element.offsetParent;
-  let elementLayoutStart = getRectStart(element, isHorizontal);
+  let elementLayoutStart = getRectStart(element, isHorizontal, isElementSticky);
   const size = (isHorizontal ? element.offsetWidth : element.offsetHeight) || 0;
-  const offsetTree = [{element, offset: elementLayoutStart, size}];
+  const offsetTree = [{
+    element,
+    offset: elementLayoutStart,
+    size,
+    isSticky: isElementSticky,
+    style: isElementSticky ? elementStyle : null
+  }];
 
   while (parent) {
     if (parent === root) {
@@ -133,10 +155,13 @@ export function getTransformedScene (scene, root, viewportSize, isHorizontal) {
       break;
     }
 
+    const nodeStyle = window.getComputedStyle(parent);
+    const isSticky = getIsSticky(nodeStyle);
+
     // get the base offset of the source element - before adding sticky intervals
-    const offset = getRectStart(parent, isHorizontal);
+    const offset = getRectStart(parent, isHorizontal, isSticky);
     elementLayoutStart += offset
-    offsetTree.push({element: parent, offset});
+    offsetTree.push({element: parent, offset, isSticky, style: isSticky ? nodeStyle : null});
     parent = parent.offsetParent;
   }
 
@@ -156,14 +181,11 @@ export function getTransformedScene (scene, root, viewportSize, isHorizontal) {
    */
   offsetTree.forEach((node, index) => {
     accumulatedOffset += node.offset;
-
-    const nodeStyle = window.getComputedStyle(node.element);
-
-    const isSticky = getIsSticky(nodeStyle);
+    const isSticky = node.isSticky;
 
     if (isSticky) {
       // stuckStart is the amount needed to scroll to reach the stuck state
-      const stuckStart = accumulatedOffset - getStickyOffset(nodeStyle, isHorizontal);
+      const stuckStart = accumulatedOffset - getStickyOffset(node.style, isHorizontal);
 
       // check if stuckStart is before the point of scroll where the timeline starts
       const isBeforeStart = stuckStart < transformedScene.start;

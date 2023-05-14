@@ -171,7 +171,7 @@ export function getController (config) {
         });
       });
     }, {
-      root,
+      root: root === window ? window.document : root,
       rootMargin: _config.viewportRootMargin,
       threshold: 0
     });

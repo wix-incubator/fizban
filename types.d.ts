@@ -17,7 +17,7 @@ declare type ScrollScene = {
   duration?: number | RangeName;
   end?: RangeOffset;
   disabled?: boolean;
-  viewSource?: Element;
+  viewSource?: HTMLElement;
 }
 
 declare module "fizban";

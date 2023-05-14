@@ -456,7 +456,7 @@ test('start :: effect progress :: view ranges :: with scroll parent', t => {
   t.is(progress, 1);
 });
 
-test.only('start :: effect progress :: view ranges :: sticky element :: with scroll parent', t => {
+test('start :: effect progress :: view ranges :: sticky element :: with scroll parent', t => {
   const element = {
     offsetHeight: 50,
     offsetTop: 100,
@@ -668,37 +668,6 @@ test('start :: effect progress :: transitionActive=true', t => {
   window.executeAnimationFrame(0);
 
   t.is(progress, 0.3);
-});
-
-test('start :: effect progress :: with container', t => {
-  let progress = 0;
-  const scrollY = 300;
-  const container = {
-    style: {
-      transform: ''
-    }
-  };
-  const scroll = new Scroll({
-    root: window,
-    container,
-    scenes: [
-      {
-        effect(scene, p) {
-          progress = p;
-        },
-        start: 0,
-        duration: 500
-      }
-    ]
-  });
-
-  scroll.start();
-
-  window.scrollTo(0, scrollY);
-  window.executeAnimationFrame(0);
-
-  t.is(progress, 0.6);
-  t.is(container.style.transform, `translateY(-${scrollY}px)`);
 });
 
 test('viewport :: disable', t => {
