@@ -596,7 +596,8 @@ class Scroll {
 
     this._lerpFrameId = 0;
     this.effect = null;
-    this.config.root = this.config.root || window;
+    // if no root or root is document.body then use window
+    this.config.root = (!this.config.root || this.config.root === window.document.body) ? window : this.config.root;
     this.config.resetProgress = this.config.resetProgress || this.resetProgress.bind(this);
 
     this._measure = this.config.measure || (() => {
