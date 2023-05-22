@@ -142,6 +142,62 @@ test('start :: effect progress :: view ranges', t => {
   t.is(progress, 1);
 });
 
+test('start :: effect progress :: view ranges :: add absolute offsets', t => {
+  const element = {
+    offsetHeight: 100,
+    offsetTop: 100,
+    offsetParent: {
+      offsetTop: 200,
+      offsetParent: {
+        offsetTop: 0
+      }
+    }
+  };
+
+  let progress = 0;
+
+  const scroll = new Scroll({
+    root: window,
+    scenes: [
+      {
+        effect(s, p) {
+          progress = p;
+        },
+        start: {name: 'entry', offset: 50, add: '-50px'}, // 225
+        end: {name: 'contain', offset: 50, add: '-50vh'}, // 300
+        viewSource: element
+      }
+    ]
+  });
+
+  scroll.start();
+
+  window.scrollTo(0, 200);
+  window.executeAnimationFrame(0);
+
+  t.is(progress, 0);
+
+  window.scrollTo(0, 250);
+  window.executeAnimationFrame(1);
+
+  t.is(+progress.toFixed(3), 0.333);
+
+  window.scrollTo(0, 275);
+  window.executeAnimationFrame(2);
+
+  t.is(+progress.toFixed(3), 0.667);
+
+  window.scrollTo(0, 300);
+  window.executeAnimationFrame(3);
+
+  t.is(progress, 1);
+
+  window.scrollTo(0, 325);
+  window.executeAnimationFrame(4);
+
+  t.is(progress, 1);
+});
+
 test('start :: effect progress :: view ranges :: duration range', t => {
   const element = {
     offsetHeight: 100,
@@ -403,6 +459,7 @@ test('start :: effect progress :: view ranges :: with scroll parent', t => {
         'overflow-y': 'hidden'
       },
       addEventListener: window.addEventListener,
+      removeEventListener: window.removeEventListener,
       scrollTo(x, y) {
         root.scrollLeft = x;
         root.scrollTop = y;
@@ -470,6 +527,7 @@ test('start :: effect progress :: view ranges :: sticky element :: with scroll p
           'overflow-y': 'hidden'
         },
         addEventListener: window.addEventListener,
+        removeEventListener: window.removeEventListener,
         scrollTo(x, y) {
           root.scrollLeft = x;
           root.scrollTop = y;

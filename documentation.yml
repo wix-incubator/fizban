@@ -5,6 +5,8 @@ toc:
   - EffectCallback
   - RangeOffset
   - RangeName
+  - CSSUnitValue
+  - AbsoluteOffsetContext
   - name: utilities
     children:
       - lerp

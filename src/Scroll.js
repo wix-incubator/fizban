@@ -167,6 +167,7 @@ export class Scroll {
    * Register to scroll for triggering update.
    */
   setupEvent () {
+    this.removeEvent();
     this.config.root.addEventListener('scroll', this._trigger);
   }
 
@@ -237,4 +238,17 @@ export class Scroll {
  * @typedef {Object} RangeOffset
  * @property {RangeName} name
  * @property {number} offset
+ * @property {CSSUnitValue} [add]
+ */
+
+/**
+ * @typedef {Object} CSSUnitValue
+ * @property {number} value
+ * @property {'px'|'vh'|'vw'} unit
+ */
+
+/**
+ * @typedef {Object} AbsoluteOffsetContext
+ * @property {number} viewportWidth
+ * @property {number} viewportHeight
  */

@@ -1,4 +1,23 @@
 /**
+ * Convert an absolute offset as string to number of pixels
+ *
+ * @param {string|undefined} offsetString
+ * @param {AbsoluteOffsetContext} absoluteOffsetContext
+ * @return {number}
+ */
+function transformAbsoluteOffsetToNumber (offsetString, absoluteOffsetContext) {
+  return offsetString
+    ? /^-?\d+px$/.test(offsetString)
+      ? parseInt(offsetString)
+      : /^-?\d+vh$/.test(offsetString)
+        ? parseInt(offsetString) * absoluteOffsetContext.viewportHeight / 100
+        : /^-?\d+vw$/.test(offsetString)
+          ? parseInt(offsetString) * absoluteOffsetContext.viewportWidth / 100
+          : parseInt(offsetString) || 0
+    : 0;
+}
+
+/**
  * Convert a range into offset in pixels.
  *
  * @param {{name: RangeName, offset: number}} range
@@ -42,9 +61,10 @@ function transformRangeToPosition (range, viewportSize, rect) {
  * @param {{start: number, end: number}} rect
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
+ * @param {AbsoluteOffsetContext} absoluteOffsetContext
  * @return {ScrollScene}
  */
-function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal) {
+function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal, absoluteOffsetContext) {
   const { start, end, duration } = scene;
 
   let startOffset = start;
@@ -63,12 +83,14 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal)
   else {
     if (startRange || start?.name) {
       startRange = startRange || start;
-      startOffset = transformRangeToPosition(startRange, viewportSize, rect);
+      const startAdd = transformAbsoluteOffsetToNumber(startRange.add, absoluteOffsetContext);
+      startOffset = transformRangeToPosition(startRange, viewportSize, rect) + startAdd;
     }
 
     if (endRange || end?.name) {
       endRange = endRange || end;
-      endOffset = transformRangeToPosition(endRange, viewportSize, rect);
+      const endAdd = transformAbsoluteOffsetToNumber(endRange.add, absoluteOffsetContext);
+      endOffset = transformRangeToPosition(endRange, viewportSize, rect) + endAdd;
     }
     else if (typeof duration === 'number') {
       endOffset = startOffset + duration;
@@ -130,9 +152,10 @@ function getRectStart (element, isHorizontal, isSticky) {
  * @param {Window|HTMLElement} root
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
+ * @param {AbsoluteOffsetContext} absoluteOffsetContext
  * @return {ScrollScene}
  */
-export function getTransformedScene (scene, root, viewportSize, isHorizontal) {
+export function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteOffsetContext) {
   const element = scene.viewSource;
   const elementStyle = window.getComputedStyle(element);
   const isElementSticky = getIsSticky(elementStyle);
@@ -171,7 +194,8 @@ export function getTransformedScene (scene, root, viewportSize, isHorizontal) {
     scene,
     {start: elementLayoutStart, end: elementLayoutStart + size},
     viewportSize,
-    isHorizontal
+    isHorizontal,
+    absoluteOffsetContext
   );
 
   let accumulatedOffset = 0;

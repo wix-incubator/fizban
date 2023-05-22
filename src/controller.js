@@ -62,6 +62,14 @@ function getViewportSize (root, isHorizontal) {
   return isHorizontal ? root.clientWidth : root.clientHeight;
 }
 
+function getAbsoluteOffsetContext () {
+  // TODO: re-calc on viewport resize
+  return {
+    viewportWidth: window.visualViewport.width,
+    viewportHeight: window.visualViewport.height
+  };
+}
+
 /*
  * Scroll controller factory
  */
@@ -83,6 +91,7 @@ export function getController (config) {
   let lastP;
   let viewportObserver, rangesResizeObserver, viewportResizeHandler, scrollportResizeObserver;
   const rangesToObserve = [];
+  const absoluteOffsetContext = getAbsoluteOffsetContext()
 
   /*
    * Prepare scenes data.
@@ -91,7 +100,7 @@ export function getController (config) {
     scene.index = index;
 
     if (scene.viewSource && (typeof scene.duration === 'string' || scene.start?.name)) {
-      scene = getTransformedScene(scene, root, viewportSize, horizontal);
+      scene = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
 
       if (_config.observeSourcesResize) {
         rangesToObserve.push(scene);
@@ -120,7 +129,7 @@ export function getController (config) {
         entries.forEach(entry => {
           const scene = targetToScene.get(entry.target);
           // TODO: try to optimize by using `const {blockSize, inlineSize} = entry.borderBoxSize[0]`
-          _config.scenes[scene.index] = getTransformedScene(scene, viewportSize, horizontal);
+          _config.scenes[scene.index] = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
 
           // replace the old object from the cache with the new one
           rangesToObserve.splice(rangesToObserve.indexOf(scene), 1, _config.scenes[scene.index]);
@@ -138,7 +147,7 @@ export function getController (config) {
         viewportSize = getViewportSize(root, horizontal);
 
         const newRanges = rangesToObserve.map(scene => {
-          const newScene = getTransformedScene(scene, root, viewportSize, horizontal);
+          const newScene = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
 
           _config.scenes[scene.index] = newScene;
 

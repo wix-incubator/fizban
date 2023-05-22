@@ -81,6 +81,25 @@ function debounce (fn, interval) {
 }
 
 /**
+ * Convert an absolute offset as string to number of pixels
+ *
+ * @param {string|undefined} offsetString
+ * @param {AbsoluteOffsetContext} absoluteOffsetContext
+ * @return {number}
+ */
+function transformAbsoluteOffsetToNumber (offsetString, absoluteOffsetContext) {
+  return offsetString
+    ? /^-?\d+px$/.test(offsetString)
+      ? parseInt(offsetString)
+      : /^-?\d+vh$/.test(offsetString)
+        ? parseInt(offsetString) * absoluteOffsetContext.viewportHeight / 100
+        : /^-?\d+vw$/.test(offsetString)
+          ? parseInt(offsetString) * absoluteOffsetContext.viewportWidth / 100
+          : parseInt(offsetString) || 0
+    : 0;
+}
+
+/**
  * Convert a range into offset in pixels.
  *
  * @param {{name: RangeName, offset: number}} range
@@ -124,9 +143,10 @@ function transformRangeToPosition (range, viewportSize, rect) {
  * @param {{start: number, end: number}} rect
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
+ * @param {AbsoluteOffsetContext} absoluteOffsetContext
  * @return {ScrollScene}
  */
-function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal) {
+function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal, absoluteOffsetContext) {
   const { start, end, duration } = scene;
 
   let startOffset = start;
@@ -145,12 +165,14 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal)
   else {
     if (startRange || start?.name) {
       startRange = startRange || start;
-      startOffset = transformRangeToPosition(startRange, viewportSize, rect);
+      const startAdd = transformAbsoluteOffsetToNumber(startRange.add, absoluteOffsetContext);
+      startOffset = transformRangeToPosition(startRange, viewportSize, rect) + startAdd;
     }
 
     if (endRange || end?.name) {
       endRange = endRange || end;
-      endOffset = transformRangeToPosition(endRange, viewportSize, rect);
+      const endAdd = transformAbsoluteOffsetToNumber(endRange.add, absoluteOffsetContext);
+      endOffset = transformRangeToPosition(endRange, viewportSize, rect) + endAdd;
     }
     else if (typeof duration === 'number') {
       endOffset = startOffset + duration;
@@ -212,9 +234,10 @@ function getRectStart (element, isHorizontal, isSticky) {
  * @param {Window|HTMLElement} root
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
+ * @param {AbsoluteOffsetContext} absoluteOffsetContext
  * @return {ScrollScene}
  */
-function getTransformedScene (scene, root, viewportSize, isHorizontal) {
+function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteOffsetContext) {
   const element = scene.viewSource;
   const elementStyle = window.getComputedStyle(element);
   const isElementSticky = getIsSticky(elementStyle);
@@ -252,7 +275,10 @@ function getTransformedScene (scene, root, viewportSize, isHorizontal) {
   const transformedScene = transformSceneRangesToOffsets(
     scene,
     {start: elementLayoutStart, end: elementLayoutStart + size},
-    viewportSize);
+    viewportSize,
+    isHorizontal,
+    absoluteOffsetContext
+  );
 
   let accumulatedOffset = 0;
 
@@ -357,6 +383,14 @@ function getViewportSize (root, isHorizontal) {
   return isHorizontal ? root.clientWidth : root.clientHeight;
 }
 
+function getAbsoluteOffsetContext () {
+  // TODO: re-calc on viewport resize
+  return {
+    viewportWidth: window.visualViewport.width,
+    viewportHeight: window.visualViewport.height
+  };
+}
+
 /*
  * Scroll controller factory
  */
@@ -378,6 +412,7 @@ function getController (config) {
   let lastP;
   let viewportObserver, rangesResizeObserver, viewportResizeHandler, scrollportResizeObserver;
   const rangesToObserve = [];
+  const absoluteOffsetContext = getAbsoluteOffsetContext();
 
   /*
    * Prepare scenes data.
@@ -386,7 +421,7 @@ function getController (config) {
     scene.index = index;
 
     if (scene.viewSource && (typeof scene.duration === 'string' || scene.start?.name)) {
-      scene = getTransformedScene(scene, root, viewportSize, horizontal);
+      scene = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
 
       if (_config.observeSourcesResize) {
         rangesToObserve.push(scene);
@@ -415,7 +450,7 @@ function getController (config) {
         entries.forEach(entry => {
           const scene = targetToScene.get(entry.target);
           // TODO: try to optimize by using `const {blockSize, inlineSize} = entry.borderBoxSize[0]`
-          _config.scenes[scene.index] = getTransformedScene(scene, viewportSize, horizontal);
+          _config.scenes[scene.index] = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
 
           // replace the old object from the cache with the new one
           rangesToObserve.splice(rangesToObserve.indexOf(scene), 1, _config.scenes[scene.index]);
@@ -433,7 +468,7 @@ function getController (config) {
         viewportSize = getViewportSize(root, horizontal);
 
         const newRanges = rangesToObserve.map(scene => {
-          const newScene = getTransformedScene(scene, root, viewportSize, horizontal);
+          const newScene = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
 
           _config.scenes[scene.index] = newScene;
 
@@ -722,6 +757,7 @@ class Scroll {
    * Register to scroll for triggering update.
    */
   setupEvent () {
+    this.removeEvent();
     this.config.root.addEventListener('scroll', this._trigger);
   }
 
@@ -792,6 +828,19 @@ class Scroll {
  * @typedef {Object} RangeOffset
  * @property {RangeName} name
  * @property {number} offset
+ * @property {CSSUnitValue} [add]
+ */
+
+/**
+ * @typedef {Object} CSSUnitValue
+ * @property {number} value
+ * @property {'px'|'vh'|'vw'} unit
+ */
+
+/**
+ * @typedef {Object} AbsoluteOffsetContext
+ * @property {number} viewportWidth
+ * @property {number} viewportHeight
  */
 
 exports.Scroll = Scroll;
