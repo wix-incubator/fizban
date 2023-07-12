@@ -30,16 +30,21 @@
       }
     }
 
+    #filler {
+      height: 100vh;
+    }
+
     #sticky-1 {
       position: sticky;
       top: 0;
-      height: 100vh;
+      bottom: 0;
+      height: 50vh;
       overflow: clip;
-      animation: invert 100ms paused both;
+      animation: invert 100ms linear paused both;
     }
 
     #sticky-1 img {
-      min-height: 100vh;
+      min-height: 50vh;
       min-width: 100%;
       object-fit: cover;
       mix-blend-mode: difference;
@@ -49,13 +54,15 @@
 <body>
   <main>
     <div id="wrapper-1">
+      <section id="filler"></section>
       <section id="sticky-1">
         <img id="image-1" src="https://images.unsplash.com/photo-1612733619095-4ea8ed978657?crop=fill&w=19204&h=1080" alt="">
       </section>
     </div>
   </main>
   <script type="module">
-    import { Scroll } from "https://cdn.skypack.dev/fizban@0.6.0";
+    // import { Scroll } from "https://cdn.skypack.dev/fizban@0.6.0";
+    import { Scroll } from '../index.js'
 
     const stk = document.querySelector('#sticky-1');
     const animation = stk.getAnimations()[0];
@@ -64,15 +71,16 @@
     const scroll = new Scroll({
       observeViewportResize: true,
       observeSourcesResize: true,
-      transitionActive: true,
-      transitionFriction: 0.95,
-      transitionEpsilon: 0.05,
+      // transitionActive: true,
+      // transitionFriction: 0.95,
+      // transitionEpsilon: 0.05,
       scenes: [
         {
           viewSource: document.querySelector('#sticky-1'),
           start: {name: 'contain', offset: 0},
           end: {name: 'contain', offset: 100},
           effect: (scene, p) => {
+            console.log(p);
             animation.currentTime = p * duration;
           }
         }
