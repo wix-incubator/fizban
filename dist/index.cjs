@@ -193,15 +193,25 @@ function getIsSticky (style) {
 }
 
 /**
- * Get offset of an element in scroll direction.
+ * Get start offset of an element in scroll direction.
  *
  * @param {CSSStyleDeclaration} style
  * @param {boolean} isHorizontal
  * @return {number}
  */
-function getStickyOffset (style, isHorizontal) {
-  // TODO: get also right/bottom offsets
+function getStickyStartOffset (style, isHorizontal) {
   return parseInt(isHorizontal ? style.left : style.top);
+}
+
+/**
+ * Get end offset of an element in scroll direction.
+ *
+ * @param {CSSStyleDeclaration} style
+ * @param {boolean} isHorizontal
+ * @return {number}
+ */
+function getStickyEndOffset (style, isHorizontal) {
+  return parseInt(isHorizontal ? style.right : style.bottom);
 }
 
 /**
@@ -227,6 +237,27 @@ function getRectStart (element, isHorizontal, isSticky) {
   return result
 }
 
+function getStickyData (style, isHorizontal) {
+  let sticky;
+  const stickyStart = getStickyStartOffset(style, isHorizontal);
+  const stickyEnd = getStickyEndOffset(style, isHorizontal);
+  const hasStickyStart = !isNaN(stickyStart);
+  const hasStickyEnd = !isNaN(stickyEnd);
+
+  if (hasStickyStart || hasStickyEnd) {
+    sticky = {};
+
+    if (hasStickyStart) {
+      sticky.start = stickyStart;
+    }
+    if (hasStickyEnd) {
+      sticky.end = stickyEnd;
+    }
+  }
+
+  return sticky;
+}
+
 /**
  * Returns a converted scene data from ranges into offsets in pixels.
  *
@@ -241,15 +272,23 @@ function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteO
   const element = scene.viewSource;
   const elementStyle = window.getComputedStyle(element);
   const isElementSticky = getIsSticky(elementStyle);
+  const elementStickiness = isElementSticky ? getStickyData(elementStyle, isHorizontal) : undefined;
 
   let parent = element.offsetParent;
-  let elementLayoutStart = getRectStart(element, isHorizontal, isElementSticky);
+  let elementLayoutStart = 0;
+  const elementOffset = getRectStart(element, isHorizontal, isElementSticky);
+
+  // if we have sticky end (bottom or right) ignore offset for this element because it will stick to its parent's start edge
+  if (!elementStickiness || !('end' in elementStickiness)) {
+    elementLayoutStart += elementOffset;
+  }
+
   const size = (isHorizontal ? element.offsetWidth : element.offsetHeight) || 0;
   const offsetTree = [{
     element,
-    offset: elementLayoutStart,
+    offset: elementOffset,
     size,
-    isSticky: isElementSticky,
+    sticky: elementStickiness,
     style: isElementSticky ? elementStyle : null
   }];
 
@@ -262,11 +301,17 @@ function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteO
 
     const nodeStyle = window.getComputedStyle(parent);
     const isSticky = getIsSticky(nodeStyle);
+    const sticky = isSticky ? getStickyData(nodeStyle, isHorizontal) : undefined;
 
     // get the base offset of the source element - before adding sticky intervals
     const offset = getRectStart(parent, isHorizontal, isSticky);
-    elementLayoutStart += offset;
-    offsetTree.push({element: parent, offset, isSticky, style: isSticky ? nodeStyle : null});
+
+    // if we have sticky end (bottom or right) ignore offset for this element because it will stick to its parent's start edge
+    if (!sticky || !('end' in sticky)) {
+      elementLayoutStart += offset;
+    }
+
+    offsetTree.push({element: parent, offset, sticky});
     parent = parent.offsetParent;
   }
 
@@ -283,37 +328,70 @@ function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteO
   let accumulatedOffset = 0;
 
   /*
+   * loop from root down to subject
    * check for sticky positioned elements in the tree and add stuck intervals if needed
    */
   offsetTree.forEach((node, index) => {
     accumulatedOffset += node.offset;
-    const isSticky = node.isSticky;
+    const sticky = node.sticky;
 
-    if (isSticky) {
-      // stuckStart is the amount needed to scroll to reach the stuck state
-      const stuckStart = accumulatedOffset - getStickyOffset(node.style, isHorizontal);
+    if (sticky) {
+      if ('end' in sticky) {
+        const parent = offsetTree[index - 1]?.element;
 
-      // check if stuckStart is before the point of scroll where the timeline starts
-      const isBeforeStart = stuckStart < transformedScene.start;
-      // check if stuckStart is inside the timeline's active scroll interval
-      const isInsideDuration = !isBeforeStart && stuckStart <= transformedScene.end;
-
-      let extraOffset = 0;
-      const parent = offsetTree[index - 1]?.element;
-
-      if (parent) {
-        if (isBeforeStart || isInsideDuration) {
-          const parentSize = (isHorizontal ? parent.offsetWidth : parent.offsetHeight) || 0;
-          const elementOffset = node.offset;
+        if (parent) {
           const elementSize = (isHorizontal ? node.element.offsetWidth : node.element.offsetHeight) || 0;
+          const offsetFromViewEnd = elementSize + sticky.end - viewportSize;
+          /*
+           * Sticky bottom:
+           * starts on the starting edge of element's parent - viewport size + element size + offset from bottom of view
+           * ends on the element's offset + offset from bottom of view
+           * duration is essentially element's offset
+           */
+          const stuckStart = accumulatedOffset + offsetFromViewEnd - node.offset;
+          // check if stuckStart is before the point of scroll where the timeline starts
+          const isBeforeStart = stuckStart < transformedScene.start;
+          // check if stuckStart is inside the timeline's active scroll interval
+          const isInsideDuration = !isBeforeStart && stuckStart <= transformedScene.end;
 
-          extraOffset = parentSize - (elementOffset + elementSize);
-          accumulatedOffset += extraOffset;
-          transformedScene.end += extraOffset;
+          let extraOffset = 0;
+          if (isBeforeStart || isInsideDuration) {
+            extraOffset = node.offset;
+            transformedScene.end += extraOffset;
+          }
+
+          if (isBeforeStart) {
+            transformedScene.start += extraOffset;
+          }
         }
+      }
 
-        if (isBeforeStart) {
-          transformedScene.start += extraOffset;
+      if ('start' in sticky) {
+        // stuckStart is the amount needed to scroll to reach the stuck state
+        const stuckStart = accumulatedOffset - sticky.start;
+
+        // check if stuckStart is before the point of scroll where the timeline starts
+        const isBeforeStart = stuckStart < transformedScene.start;
+        // check if stuckStart is inside the timeline's active scroll interval
+        const isInsideDuration = !isBeforeStart && stuckStart <= transformedScene.end;
+
+        let extraOffset = 0;
+        const parent = offsetTree[index - 1]?.element;
+
+        if (parent) {
+          if (isBeforeStart || isInsideDuration) {
+            const parentSize = (isHorizontal ? parent.offsetWidth : parent.offsetHeight) || 0;
+            const elementOffset = node.offset;
+            const elementSize = (isHorizontal ? node.element.offsetWidth : node.element.offsetHeight) || 0;
+
+            extraOffset = parentSize - (elementOffset + elementSize);
+            accumulatedOffset += extraOffset;
+            transformedScene.end += extraOffset;
+          }
+
+          if (isBeforeStart) {
+            transformedScene.start += extraOffset;
+          }
         }
       }
     }
