@@ -513,10 +513,6 @@ function getController (config) {
       scene.duration = scene.end - scene.start;
     }
 
-    if (!('observeViewEntry' in scene)) {
-      scene.observeViewEntry = true;
-    }
-
     return scene;
   });
 
@@ -583,22 +579,22 @@ function getController (config) {
       rootMargin: _config.viewportRootMargin,
       threshold: 0
     });
-
-    _config.scenes.forEach(scene => {
-      if (scene.viewSource && scene.observeViewEntry) {
-        let scenesArray = scenesByElement.get(scene.viewSource);
-
-        if (!scenesArray) {
-          scenesArray = [];
-          scenesByElement.set(scene.viewSource, scenesArray);
-
-          viewportObserver.observe(scene.viewSource);
-        }
-
-        scenesArray.push(scene);
-      }
-    });
   }
+
+  _config.scenes.forEach(scene => {
+    if (scene.viewSource) {
+      let scenesArray = scenesByElement.get(scene.viewSource);
+
+      if (!scenesArray) {
+        scenesArray = [];
+        scenesByElement.set(scene.viewSource, scenesArray);
+
+        viewportObserver.observe(scene.viewSource);
+      }
+
+      scenesArray.push(scene);
+    }
+  });
 
   /**
    * Updates progress in all scene effects.
@@ -888,7 +884,6 @@ class Scroll {
  * @property {number|RangeOffset} [end] scroll position in pixels where effect ends. Defaults to start + duration.
  * @property {boolean} [disabled] whether to perform updates on the scene. Defaults to false.
  * @property {Element} [viewSource] an element to be used for observing intersection with viewport for disabling/enabling the scene, or the source of a ViewTimeline if scene start/end are provided as ranges.
- * @property {boolean} [observeViewEntry] whether to observe
  */
 
 /**

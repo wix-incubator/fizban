@@ -114,10 +114,6 @@ export function getController (config) {
       scene.duration = scene.end - scene.start;
     }
 
-    if (!('observeViewEntry' in scene)) {
-      scene.observeViewEntry = true;
-    }
-
     return scene;
   });
 
@@ -184,22 +180,22 @@ export function getController (config) {
       rootMargin: _config.viewportRootMargin,
       threshold: 0
     });
-
-    _config.scenes.forEach(scene => {
-      if (scene.viewSource && scene.observeViewEntry) {
-        let scenesArray = scenesByElement.get(scene.viewSource);
-
-        if (!scenesArray) {
-          scenesArray = [];
-          scenesByElement.set(scene.viewSource, scenesArray);
-
-          viewportObserver.observe(scene.viewSource);
-        }
-
-        scenesArray.push(scene);
-      }
-    });
   }
+
+  _config.scenes.forEach(scene => {
+    if (scene.viewSource) {
+      let scenesArray = scenesByElement.get(scene.viewSource);
+
+      if (!scenesArray) {
+        scenesArray = [];
+        scenesByElement.set(scene.viewSource, scenesArray);
+
+        viewportObserver.observe(scene.viewSource);
+      }
+
+      scenesArray.push(scene);
+    }
+  });
 
   /**
    * Updates progress in all scene effects.

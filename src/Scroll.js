@@ -220,7 +220,6 @@ export class Scroll {
  * @property {number|RangeOffset} [end] scroll position in pixels where effect ends. Defaults to start + duration.
  * @property {boolean} [disabled] whether to perform updates on the scene. Defaults to false.
  * @property {Element} [viewSource] an element to be used for observing intersection with viewport for disabling/enabling the scene, or the source of a ViewTimeline if scene start/end are provided as ranges.
- * @property {boolean} [observeViewEntry] whether to observe
  */
 
 /**
