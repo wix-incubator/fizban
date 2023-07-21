@@ -194,6 +194,7 @@ export function getTransformedScene (scene, root, viewportSize, isHorizontal, ab
 
   let parent = element.offsetParent;
   let elementLayoutStart = 0;
+  let isFixed = elementStyle.position === 'fixed';
   const elementOffset = getRectStart(element, isHorizontal, isElementSticky);
 
   // if we have sticky end (bottom or right) ignore offset for this element because it will stick to its parent's start edge
@@ -231,6 +232,11 @@ export function getTransformedScene (scene, root, viewportSize, isHorizontal, ab
 
     offsetTree.push({element: parent, offset, sticky});
     parent = parent.offsetParent;
+
+    if (!parent) {
+      // only if offsetParent is null do we know that the fixed element is actually fixed to the viewport and we need to set duration to 0
+      isFixed = nodeStyle.position === 'fixed';
+    }
   }
 
   offsetTree.reverse();
@@ -242,6 +248,8 @@ export function getTransformedScene (scene, root, viewportSize, isHorizontal, ab
     isHorizontal,
     absoluteOffsetContext
   );
+
+  transformedScene.isFixed = isFixed;
 
   let accumulatedOffset = 0;
 

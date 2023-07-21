@@ -225,6 +225,11 @@ export function getController (config) {
 
         // run effect
         scene.effect(scene, progress, velocity);
+
+        // if fixed position then disable after one tick
+        if (scene.isFixed) {
+          scene.disabled = true;
+        }
       }
     }
 
