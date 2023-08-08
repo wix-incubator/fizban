@@ -180,22 +180,22 @@ export function getController (config) {
       rootMargin: _config.viewportRootMargin,
       threshold: 0
     });
-  }
 
-  _config.scenes.forEach(scene => {
-    if (scene.viewSource) {
-      let scenesArray = scenesByElement.get(scene.viewSource);
+    _config.scenes.forEach(scene => {
+      if (scene.viewSource) {
+        let scenesArray = scenesByElement.get(scene.viewSource);
 
-      if (!scenesArray) {
-        scenesArray = [];
-        scenesByElement.set(scene.viewSource, scenesArray);
+        if (!scenesArray) {
+          scenesArray = [];
+          scenesByElement.set(scene.viewSource, scenesArray);
 
-        viewportObserver.observe(scene.viewSource);
+          viewportObserver.observe(scene.viewSource);
+        }
+
+        scenesArray.push(scene);
       }
-
-      scenesArray.push(scene);
-    }
-  });
+    });
+  }
 
   /**
    * Updates progress in all scene effects.
