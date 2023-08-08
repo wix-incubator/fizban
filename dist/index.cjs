@@ -276,7 +276,7 @@ function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteO
 
   let parent = element.offsetParent;
   let elementLayoutStart = 0;
-  let isFixed = false;
+  let isFixed = elementStyle.position === 'fixed';
   const elementOffset = getRectStart(element, isHorizontal, isElementSticky);
 
   // if we have sticky end (bottom or right) ignore offset for this element because it will stick to its parent's start edge
@@ -317,7 +317,7 @@ function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteO
 
     if (!parent) {
       // only if offsetParent is null do we know that the fixed element is actually fixed to the viewport and we need to set duration to 0
-      isFixed = nodeStyle.position = 'fixed';
+      isFixed = nodeStyle.position === 'fixed';
     }
   }
 
@@ -587,22 +587,22 @@ function getController (config) {
       rootMargin: _config.viewportRootMargin,
       threshold: 0
     });
-  }
 
-  _config.scenes.forEach(scene => {
-    if (scene.viewSource) {
-      let scenesArray = scenesByElement.get(scene.viewSource);
+    _config.scenes.forEach(scene => {
+      if (scene.viewSource) {
+        let scenesArray = scenesByElement.get(scene.viewSource);
 
-      if (!scenesArray) {
-        scenesArray = [];
-        scenesByElement.set(scene.viewSource, scenesArray);
+        if (!scenesArray) {
+          scenesArray = [];
+          scenesByElement.set(scene.viewSource, scenesArray);
 
-        viewportObserver.observe(scene.viewSource);
+          viewportObserver.observe(scene.viewSource);
+        }
+
+        scenesArray.push(scene);
       }
-
-      scenesArray.push(scene);
-    }
-  });
+    });
+  }
 
   /**
    * Updates progress in all scene effects.
