@@ -7,7 +7,7 @@ import { defaultTo, frameThrottle, lerp } from './utilities.js';
 const DEFAULTS = {
   transitionActive: false,
   transitionFriction: 0.9,
-  transitionEpsilon: 0.1,
+  transitionEpsilon: 1,
   velocityActive: false,
   velocityMax: 1
 };
@@ -144,15 +144,7 @@ export class Scroll {
    * Calculate current progress.
    */
   lerp () {
-    this.currentProgress.p = lerp(this.currentProgress.p, this.progress.p, 1 - this.config.transitionFriction, this.config.transitionEpsilon);
-
-    if (this.config.transitionEpsilon) {
-      const deltaP = this.progress.p - this.currentProgress.p;
-
-      if (Math.abs(deltaP) < this.config.transitionEpsilon) {
-        this.currentProgress.p = this.progress.p;
-      }
-    }
+    this.currentProgress.p = lerp(this.currentProgress.p, this.progress.p, +(1 - this.config.transitionFriction).toFixed(3), this.config.transitionEpsilon);
   }
 
   /**

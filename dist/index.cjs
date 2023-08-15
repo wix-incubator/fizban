@@ -19,16 +19,21 @@ function defaultTo (obj, defaults) {
  * @param {number} a start point
  * @param {number} b end point
  * @param {number} t interpolation factor
- * @param {number} e minimal possible delta between result and end
+ * @param {number} e minimal possible delta between result and start, and between result and end
  * @return {number}
  */
 function lerp (a, b, t, e) {
-  const res = a * (1 - t) + b * t;
+  let res = a * (1 - t) + b * t;
 
   if (e) {
-    const delta = b - res;
+    const deltaFromStart = res - a;
+    if (Math.abs(deltaFromStart) < e) {
+      res = a + e * Math.sign(deltaFromStart);
+    }
 
-    if (Math.abs(delta) < e) {
+    const deltaFromEnd = b - res;
+
+    if (Math.abs(deltaFromEnd) < e) {
       return b;
     }
   }
@@ -684,7 +689,7 @@ function getController (config) {
 const DEFAULTS = {
   transitionActive: false,
   transitionFriction: 0.9,
-  transitionEpsilon: 0.1,
+  transitionEpsilon: 1,
   velocityActive: false,
   velocityMax: 1
 };
@@ -821,15 +826,7 @@ class Scroll {
    * Calculate current progress.
    */
   lerp () {
-    this.currentProgress.p = lerp(this.currentProgress.p, this.progress.p, 1 - this.config.transitionFriction, this.config.transitionEpsilon);
-
-    if (this.config.transitionEpsilon) {
-      const deltaP = this.progress.p - this.currentProgress.p;
-
-      if (Math.abs(deltaP) < this.config.transitionEpsilon) {
-        this.currentProgress.p = this.progress.p;
-      }
-    }
+    this.currentProgress.p = lerp(this.currentProgress.p, this.progress.p, +(1 - this.config.transitionFriction).toFixed(3), this.config.transitionEpsilon);
   }
 
   /**

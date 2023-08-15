@@ -17,16 +17,21 @@ function defaultTo (obj, defaults) {
  * @param {number} a start point
  * @param {number} b end point
  * @param {number} t interpolation factor
- * @param {number} e minimal possible delta between result and end
+ * @param {number} e minimal possible delta between result and start, and between result and end
  * @return {number}
  */
 function lerp (a, b, t, e) {
-  const res = a * (1 - t) + b * t;
+  let res = a * (1 - t) + b * t;
 
   if (e) {
-    const delta = b - res;
+    const deltaFromStart = res - a;
+    if (Math.abs(deltaFromStart) < e) {
+      res = a + e * Math.sign(deltaFromStart);
+    }
 
-    if (Math.abs(delta) < e) {
+    const deltaFromEnd = b - res;
+
+    if (Math.abs(deltaFromEnd) < e) {
       return b;
     }
   }

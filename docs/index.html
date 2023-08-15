@@ -61,7 +61,7 @@
     </div>
   </main>
   <script type="module">
-    import { Scroll } from "https://cdn.skypack.dev/fizban@0.6.2";
+    import { Scroll } from "https://cdn.skypack.dev/fizban@0.6.4";
 
     const stk = document.querySelector('#sticky-1');
     const animation = stk.getAnimations()[0];
@@ -71,16 +71,16 @@
       observeViewportResize: true,
       observeSourcesResize: true,
       observeViewportEntry: true,
-      // transitionActive: true,
-      // transitionFriction: 0.95,
-      // transitionEpsilon: 0.05,
+      transitionActive: true,
+      transitionFriction: 0.95,
+      transitionEpsilon: 1,
       scenes: [
         {
           viewSource: stk,
           start: {name: 'contain', offset: 0},
           end: {name: 'contain', offset: 100},
           effect: (scene, p) => {
-            console.log(p);
+            // console.log(p);
             animation.currentTime = p * duration;
           }
         }
