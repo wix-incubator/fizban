@@ -998,17 +998,14 @@ test('pause', t => {
   t.is(window.eventListeners.scroll.size, scrollListenersSize - 1);
 });
 
-test('destroy', t => {
-  let progress = 0;
+test('destroy :: destroy scene', t => {
+  let destroyed = false;
   const scroll = new Scroll({
     root: window,
     scenes: [
       {
-        effect(scene, p) {
-          progress = p;
-        },
-        start: 0,
-        duration: 500
+        effect() {},
+        destroy() { destroyed = true; }
       }
     ]
   });
@@ -1018,13 +1015,11 @@ test('destroy', t => {
   window.scrollTo(0, 300);
   window.executeAnimationFrame();
 
-  t.is(progress, 0.6);
-
   const scrollListenersSize = window.eventListeners.scroll.size
 
   scroll.destroy();
 
   t.is(window.eventListeners.scroll.size, scrollListenersSize - 1);
-
   t.is(scroll.effect === null, true);
+  t.is(destroyed, true);
 });

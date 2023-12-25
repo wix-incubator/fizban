@@ -241,6 +241,8 @@ export function getController (config) {
    * Removes all side effects and deletes all objects.
    */
   function destroy () {
+    _config.scenes.forEach(scene => scene.destroy?.());
+
     if (viewportObserver) {
       viewportObserver.disconnect();
       viewportObserver = null;
