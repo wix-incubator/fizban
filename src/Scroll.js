@@ -197,7 +197,7 @@ export class Scroll {
  * @property {number} [velocityMax] max possible value for velocity. Velocity value will be normalized according to this number, so it is kept between 0 and 1. Defaults to 1.
  * @property {boolean} [observeViewportEntry] whether to observe entry/exit of scenes into viewport for disabling/enabling them. Defaults to `true`.
  * @property {boolean} [viewportRootMargin] `rootMargin` option to be used for viewport observation. Defaults to `'7% 7%'`.
- * @property {boolean} [observeViewportResize] whether to observe resize of the visual viewport. Defaults to `false`.
+ * @property {boolean} [observeViewportResize] whether to observe resize of the layout viewport. Defaults to `false`.
  * @property {boolean} [observeSourcesResize] whether to observe resize of view-timeline source elements. Defaults to `false`.
  * @property {Element|Window} [root] the scrollable element, defaults to window.
  */
