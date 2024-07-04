@@ -50,11 +50,7 @@ function calcProgress (p, start, end, duration) {
  */
 function getViewportSize (root, isHorizontal) {
   if (root === window) {
-    return window.visualViewport
-      ? isHorizontal
-        ? window.visualViewport.width
-        : window.visualViewport.height
-      : isHorizontal
+    return isHorizontal
         ? window.document.documentElement.clientWidth
         : window.document.documentElement.clientHeight;
   }
@@ -65,8 +61,8 @@ function getViewportSize (root, isHorizontal) {
 function getAbsoluteOffsetContext () {
   // TODO: re-calc on viewport resize
   return {
-    viewportWidth: window.visualViewport.width,
-    viewportHeight: window.visualViewport.height
+    viewportWidth: window.document.documentElement.clientWidth,
+    viewportHeight: window.document.documentElement.clientHeight
   };
 }
 
@@ -156,7 +152,7 @@ export function getController (config) {
       }, VIEWPORT_RESIZE_INTERVAL);
 
       if (root === window) {
-        (window.visualViewport || window).addEventListener('resize', viewportResizeHandler);
+        window.addEventListener('resize', viewportResizeHandler);
       }
       else if (window.ResizeObserver) {
         scrollportResizeObserver = new window.ResizeObserver(viewportResizeHandler);
@@ -259,7 +255,7 @@ export function getController (config) {
         scrollportResizeObserver = null;
       }
       else {
-        (window.visualViewport || window).removeEventListener('resize', viewportResizeHandler);
+        window.removeEventListener('resize', viewportResizeHandler);
       }
     }
   }

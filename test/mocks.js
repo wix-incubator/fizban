@@ -7,12 +7,9 @@ const _window = {
   eventListeners,
   scrollX: 0,
   scrollY: 0,
-  visualViewport: {
-    width: 500,
-    height: 50
-  },
   document: {
     documentElement: {
+      clientWidth: 500,
       clientHeight: 50
     },
     body: {

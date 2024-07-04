@@ -462,11 +462,7 @@ function calcProgress (p, start, end, duration) {
  */
 function getViewportSize (root, isHorizontal) {
   if (root === window) {
-    return window.visualViewport
-      ? isHorizontal
-        ? window.visualViewport.width
-        : window.visualViewport.height
-      : isHorizontal
+    return isHorizontal
         ? window.document.documentElement.clientWidth
         : window.document.documentElement.clientHeight;
   }
@@ -477,8 +473,8 @@ function getViewportSize (root, isHorizontal) {
 function getAbsoluteOffsetContext () {
   // TODO: re-calc on viewport resize
   return {
-    viewportWidth: window.visualViewport.width,
-    viewportHeight: window.visualViewport.height
+    viewportWidth: window.document.documentElement.clientWidth,
+    viewportHeight: window.document.documentElement.clientHeight
   };
 }
 
@@ -568,7 +564,7 @@ function getController (config) {
       }, VIEWPORT_RESIZE_INTERVAL);
 
       if (root === window) {
-        (window.visualViewport || window).addEventListener('resize', viewportResizeHandler);
+        window.addEventListener('resize', viewportResizeHandler);
       }
       else if (window.ResizeObserver) {
         scrollportResizeObserver = new window.ResizeObserver(viewportResizeHandler);
@@ -671,7 +667,7 @@ function getController (config) {
         scrollportResizeObserver = null;
       }
       else {
-        (window.visualViewport || window).removeEventListener('resize', viewportResizeHandler);
+        window.removeEventListener('resize', viewportResizeHandler);
       }
     }
   }
@@ -881,7 +877,7 @@ class Scroll {
  * @property {number} [velocityMax] max possible value for velocity. Velocity value will be normalized according to this number, so it is kept between 0 and 1. Defaults to 1.
  * @property {boolean} [observeViewportEntry] whether to observe entry/exit of scenes into viewport for disabling/enabling them. Defaults to `true`.
  * @property {boolean} [viewportRootMargin] `rootMargin` option to be used for viewport observation. Defaults to `'7% 7%'`.
- * @property {boolean} [observeViewportResize] whether to observe resize of the visual viewport. Defaults to `false`.
+ * @property {boolean} [observeViewportResize] whether to observe resize of the layout viewport. Defaults to `false`.
  * @property {boolean} [observeSourcesResize] whether to observe resize of view-timeline source elements. Defaults to `false`.
  * @property {Element|Window} [root] the scrollable element, defaults to window.
  */
