@@ -141,6 +141,82 @@ function transformRangeToPosition (range, viewportSize, rect) {
   return (startPosition + percentage * duration) | 0;
 }
 
+function computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absoluteEndOffset, viewportSize, isHorizontal) {
+  let accumulatedOffset = 0;
+  const newAbsoluteRange = {start: absoluteStartOffset, end: absoluteEndOffset};
+
+  /*
+   * loop from root down to subject
+   * check for sticky positioned elements in the tree and add stuck intervals if needed
+   */
+  offsetTree.forEach((node, index) => {
+    accumulatedOffset += node.offset;
+    const sticky = node.sticky;
+
+    if (sticky) {
+      if ('end' in sticky) {
+        const parent = offsetTree[index - 1]?.element;
+
+        if (parent) {
+          const elementSize = (isHorizontal ? node.element.offsetWidth : node.element.offsetHeight) || 0;
+          const offsetFromViewEnd = elementSize + sticky.end - viewportSize;
+          /*
+           * Sticky bottom:
+           * starts on the starting edge of element's parent - viewport size + element size + offset from bottom of view
+           * ends on the element's offset + offset from bottom of view
+           * duration is essentially element's offset
+           */
+          const stuckStart = accumulatedOffset + offsetFromViewEnd - node.offset;
+          // check if stuckStart is before the point of scroll where the timeline starts
+          const isBeforeStart = stuckStart < newAbsoluteRange.start;
+          // check if stuckStart is inside the timeline's active scroll interval
+          const isInsideDuration = !isBeforeStart && stuckStart <= absoluteEndOffset;
+
+          let extraOffset = 0;
+          if (isBeforeStart || isInsideDuration) {
+            extraOffset = node.offset;
+            newAbsoluteRange.end += extraOffset;
+          }
+
+          if (isBeforeStart) {
+            newAbsoluteRange.start += extraOffset;
+          }
+        }
+      }
+
+      if ('start' in sticky) {
+        // stuckStart is the amount needed to scroll to reach the stuck state
+        const stuckStart = accumulatedOffset - sticky.start;
+
+        // check if stuckStart is before the point of scroll where the timeline starts
+        const isBeforeStart = stuckStart < newAbsoluteRange.start;
+        // check if stuckStart is inside the timeline's active scroll interval
+        const isInsideDuration = !isBeforeStart && stuckStart <= newAbsoluteRange.end;
+
+        let extraOffset = 0;
+        const parent = offsetTree[index - 1]?.element;
+
+        if (parent) {
+          if (isBeforeStart || isInsideDuration) {
+            const parentSize = (isHorizontal ? parent.offsetWidth : parent.offsetHeight) || 0;
+            const elementOffset = node.offset;
+            const elementSize = (isHorizontal ? node.element.offsetWidth : node.element.offsetHeight) || 0;
+
+            extraOffset = parentSize - (elementOffset + elementSize);
+            accumulatedOffset += extraOffset;
+            newAbsoluteRange.end += extraOffset;
+          }
+
+          if (isBeforeStart) {
+            newAbsoluteRange.start += extraOffset;
+          }
+        }
+      }
+    }
+  });
+  return newAbsoluteRange;
+}
+
 /**
  * Convert scene data in ranges into offsets in pixels.
  *
@@ -151,7 +227,7 @@ function transformRangeToPosition (range, viewportSize, rect) {
  * @param {AbsoluteOffsetContext} absoluteOffsetContext
  * @return {ScrollScene}
  */
-function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal, absoluteOffsetContext) {
+function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal, absoluteOffsetContext, offsetTree) {
   const { start, end, duration } = scene;
 
   let startOffset = start;
@@ -166,18 +242,26 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
     startOffset = transformRangeToPosition(startRange, viewportSize, rect);
     endOffset = transformRangeToPosition(endRange, viewportSize, rect);
     overrideDuration = endOffset - startOffset;
+    const newAbsoluteRange = computeStickinessIntoFullRange(offsetTree, startOffset, endOffset, viewportSize, isHorizontal);
+    startOffset = newAbsoluteRange.start;
+    endOffset = newAbsoluteRange.end;
   }
   else {
     if (startRange || start?.name) {
       startRange = startRange || start;
       const startAdd = transformAbsoluteOffsetToNumber(startRange.add, absoluteOffsetContext);
-      startOffset = transformRangeToPosition(startRange, viewportSize, rect) + startAdd;
+      const absoluteStartOffset = transformRangeToPosition({...startRange, offset: 0}, viewportSize, rect);
+      const absoluteEndOffset = transformRangeToPosition({...startRange, offset: 100}, viewportSize, rect);
+      const newAbsoluteRange = computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absoluteEndOffset, viewportSize, isHorizontal);
+      startOffset = newAbsoluteRange.start + (startRange.offset / 100) * (newAbsoluteRange.end - newAbsoluteRange.start) + startAdd;
     }
-
     if (endRange || end?.name) {
       endRange = endRange || end;
       const endAdd = transformAbsoluteOffsetToNumber(endRange.add, absoluteOffsetContext);
-      endOffset = transformRangeToPosition(endRange, viewportSize, rect) + endAdd;
+      const absoluteStartOffset = transformRangeToPosition({...endRange, offset: 0}, viewportSize, rect);
+      const absoluteEndOffset = transformRangeToPosition({...endRange, offset: 100}, viewportSize, rect);
+      const newAbsoluteRange = computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absoluteEndOffset, viewportSize, isHorizontal);
+      endOffset = newAbsoluteRange.start + (endRange.offset / 100) * (newAbsoluteRange.end - newAbsoluteRange.start) + endAdd;
     }
     else if (typeof duration === 'number') {
       endOffset = startOffset + duration;
@@ -333,82 +417,12 @@ function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteO
     {start: elementLayoutStart, end: elementLayoutStart + size},
     viewportSize,
     isHorizontal,
-    absoluteOffsetContext
+    absoluteOffsetContext,
+    offsetTree
   );
 
   transformedScene.isFixed = isFixed;
 
-  let accumulatedOffset = 0;
-
-  /*
-   * loop from root down to subject
-   * check for sticky positioned elements in the tree and add stuck intervals if needed
-   */
-  offsetTree.forEach((node, index) => {
-    accumulatedOffset += node.offset;
-    const sticky = node.sticky;
-
-    if (sticky) {
-      if ('end' in sticky) {
-        const parent = offsetTree[index - 1]?.element;
-
-        if (parent) {
-          const elementSize = (isHorizontal ? node.element.offsetWidth : node.element.offsetHeight) || 0;
-          const offsetFromViewEnd = elementSize + sticky.end - viewportSize;
-          /*
-           * Sticky bottom:
-           * starts on the starting edge of element's parent - viewport size + element size + offset from bottom of view
-           * ends on the element's offset + offset from bottom of view
-           * duration is essentially element's offset
-           */
-          const stuckStart = accumulatedOffset + offsetFromViewEnd - node.offset;
-          // check if stuckStart is before the point of scroll where the timeline starts
-          const isBeforeStart = stuckStart < transformedScene.start;
-          // check if stuckStart is inside the timeline's active scroll interval
-          const isInsideDuration = !isBeforeStart && stuckStart <= transformedScene.end;
-
-          let extraOffset = 0;
-          if (isBeforeStart || isInsideDuration) {
-            extraOffset = node.offset;
-            transformedScene.end += extraOffset;
-          }
-
-          if (isBeforeStart) {
-            transformedScene.start += extraOffset;
-          }
-        }
-      }
-
-      if ('start' in sticky) {
-        // stuckStart is the amount needed to scroll to reach the stuck state
-        const stuckStart = accumulatedOffset - sticky.start;
-
-        // check if stuckStart is before the point of scroll where the timeline starts
-        const isBeforeStart = stuckStart < transformedScene.start;
-        // check if stuckStart is inside the timeline's active scroll interval
-        const isInsideDuration = !isBeforeStart && stuckStart <= transformedScene.end;
-
-        let extraOffset = 0;
-        const parent = offsetTree[index - 1]?.element;
-
-        if (parent) {
-          if (isBeforeStart || isInsideDuration) {
-            const parentSize = (isHorizontal ? parent.offsetWidth : parent.offsetHeight) || 0;
-            const elementOffset = node.offset;
-            const elementSize = (isHorizontal ? node.element.offsetWidth : node.element.offsetHeight) || 0;
-
-            extraOffset = parentSize - (elementOffset + elementSize);
-            accumulatedOffset += extraOffset;
-            transformedScene.end += extraOffset;
-          }
-
-          if (isBeforeStart) {
-            transformedScene.start += extraOffset;
-          }
-        }
-      }
-    }
-  });
 
   return transformedScene;
 }

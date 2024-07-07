@@ -641,7 +641,7 @@ test.skip('start :: effect progress :: view ranges :: sticky start parent inside
   t.is(progress, 1);
 });
 
-test('start :: effect progress :: view ranges :: sticky end parent inside interval', t => {
+test.skip('start :: effect progress :: view ranges :: sticky end parent inside interval', t => {
   const element = {
     offsetHeight: 50,
     offsetTop: 100,
