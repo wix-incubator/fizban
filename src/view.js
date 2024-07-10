@@ -139,6 +139,7 @@ function computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absolut
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
  * @param {AbsoluteOffsetContext} absoluteOffsetContext
+ * @param {Array<{element: HTMLElement, offset: number, sticky: {start?: number, end?: number}}>} offsetTree
  * @return {ScrollScene}
  */
 function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal, absoluteOffsetContext, offsetTree) {
