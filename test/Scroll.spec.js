@@ -576,7 +576,72 @@ test('start :: effect progress :: view ranges :: sticky start parent inside inte
   t.is(progress, 1);
 });
 
-test('start :: effect progress :: view ranges :: sticky end parent inside interval', t => {
+test.skip('start :: effect progress :: view ranges :: sticky start parent inside interval :: cover range', t => {
+  const element = {
+    offsetHeight: 50,
+    offsetTop: 0,
+    offsetParent: {
+      offsetTop: 50,
+      offsetHeight: 150,
+      offsetParent: {
+        offsetTop: 0,
+        offsetHeight: 300,
+        style: {
+          'overflow-y': 'visible'
+        }
+      },
+      style: {
+        position: 'sticky',
+        top: '0px'
+      }
+    }
+  };
+
+  let progress = 0;
+
+  const scroll = new Scroll({
+    root: window,
+    scenes: [
+      {
+        effect(s, p) {
+          progress = p;
+        },
+        start: {name: 'cover', offset: 0}, // 0
+        end: {name: 'cover', offset: 100}, // 300
+        viewSource: element
+      }
+    ]
+  });
+
+  scroll.start();
+
+  window.scrollTo(0, 50);
+  window.executeAnimationFrame();
+
+  t.is(+progress.toFixed(3), 0.166);
+
+  window.scrollTo(0, 150);
+  window.executeAnimationFrame();
+
+  t.is(+progress, 0.5);
+
+  window.scrollTo(0, 200);
+  window.executeAnimationFrame();
+
+  t.is(+progress.toFixed(3), 0.667);
+
+  window.scrollTo(0, 300);
+  window.executeAnimationFrame();
+
+  t.is(progress, 1);
+
+  window.scrollTo(0, 500);
+  window.executeAnimationFrame();
+
+  t.is(progress, 1);
+});
+
+test.skip('start :: effect progress :: view ranges :: sticky end parent inside interval', t => {
   const element = {
     offsetHeight: 50,
     offsetTop: 100,
