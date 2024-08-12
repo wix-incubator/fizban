@@ -218,7 +218,6 @@ function computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absolut
       }
     }
   });
-
   return newAbsoluteRange;
 }
 
@@ -245,11 +244,9 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
   if (typeof duration === 'string') {
     startRange = { name: duration, offset: 0 };
     endRange = { name: duration, offset: 100 };
-
     startOffset = transformRangeToPosition(startRange, viewportSize, rect);
     endOffset = transformRangeToPosition(endRange, viewportSize, rect);
     overrideDuration = endOffset - startOffset;
-
     const newAbsoluteRange = computeStickinessIntoFullRange(offsetTree, startOffset, endOffset, viewportSize, isHorizontal);
 
     startOffset = newAbsoluteRange.start;
@@ -258,23 +255,18 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
   else {
     if (startRange || start?.name) {
       startRange = startRange || start;
-
       const startAdd = transformAbsoluteOffsetToNumber(startRange.add, absoluteOffsetContext);
       const absoluteStartOffset = transformRangeToPosition({...startRange, offset: 0}, viewportSize, rect);
       const absoluteEndOffset = transformRangeToPosition({...startRange, offset: 100}, viewportSize, rect);
-      // we take 0% to 100% of the named range for start, and we compute the position by adding the sticky addition for the given start offset
       const newAbsoluteRange = computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absoluteEndOffset, viewportSize, isHorizontal);
 
       startOffset = newAbsoluteRange.start + (startRange.offset / 100) * (newAbsoluteRange.end - newAbsoluteRange.start) + startAdd;
     }
-
     if (endRange || end?.name) {
       endRange = endRange || end;
-
       const endAdd = transformAbsoluteOffsetToNumber(endRange.add, absoluteOffsetContext);
       const absoluteStartOffset = transformRangeToPosition({...endRange, offset: 0}, viewportSize, rect);
       const absoluteEndOffset = transformRangeToPosition({...endRange, offset: 100}, viewportSize, rect);
-      // we take 0% to 100% of the named range for end, and we compute the position by adding the sticky addition for the given end offset
       const newAbsoluteRange = computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absoluteEndOffset, viewportSize, isHorizontal);
 
       endOffset = newAbsoluteRange.start + (endRange.offset / 100) * (newAbsoluteRange.end - newAbsoluteRange.start) + endAdd;
@@ -283,7 +275,6 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
       endOffset = startOffset + duration;
     }
   }
-
   return {...scene, start: startOffset, end: endOffset, startRange, endRange, duration: overrideDuration || duration };
 }
 
