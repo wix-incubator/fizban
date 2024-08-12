@@ -248,7 +248,6 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
     endOffset = transformRangeToPosition(endRange, viewportSize, rect);
     overrideDuration = endOffset - startOffset;
     const newAbsoluteRange = computeStickinessIntoFullRange(offsetTree, startOffset, endOffset, viewportSize, isHorizontal);
-
     startOffset = newAbsoluteRange.start;
     endOffset = newAbsoluteRange.end;
   }
@@ -259,7 +258,6 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
       const absoluteStartOffset = transformRangeToPosition({...startRange, offset: 0}, viewportSize, rect);
       const absoluteEndOffset = transformRangeToPosition({...startRange, offset: 100}, viewportSize, rect);
       const newAbsoluteRange = computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absoluteEndOffset, viewportSize, isHorizontal);
-
       startOffset = newAbsoluteRange.start + (startRange.offset / 100) * (newAbsoluteRange.end - newAbsoluteRange.start) + startAdd;
     }
     if (endRange || end?.name) {
@@ -268,13 +266,13 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
       const absoluteStartOffset = transformRangeToPosition({...endRange, offset: 0}, viewportSize, rect);
       const absoluteEndOffset = transformRangeToPosition({...endRange, offset: 100}, viewportSize, rect);
       const newAbsoluteRange = computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absoluteEndOffset, viewportSize, isHorizontal);
-
       endOffset = newAbsoluteRange.start + (endRange.offset / 100) * (newAbsoluteRange.end - newAbsoluteRange.start) + endAdd;
     }
     else if (typeof duration === 'number') {
       endOffset = startOffset + duration;
     }
   }
+
   return {...scene, start: startOffset, end: endOffset, startRange, endRange, duration: overrideDuration || duration };
 }
 
@@ -429,6 +427,7 @@ function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteO
   );
 
   transformedScene.isFixed = isFixed;
+
 
   return transformedScene;
 }
