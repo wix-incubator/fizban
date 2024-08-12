@@ -37,6 +37,10 @@ function transformRangeToPosition (range, viewportSize, rect) {
     startPosition = start - viewportSize;
     duration = Math.min(viewportSize, height);
   }
+  else if (name === 'entry-crossing') {
+    startPosition = start - viewportSize;
+    duration = height;
+  }
   else if (name === 'contain') {
     startPosition = Math.min(end - viewportSize, start);
     // it's either VH - height OR height - VH; so it boils down to just the absolute value of that

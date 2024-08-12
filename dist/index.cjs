@@ -124,6 +124,10 @@ function transformRangeToPosition (range, viewportSize, rect) {
     startPosition = start - viewportSize;
     duration = Math.min(viewportSize, height);
   }
+  else if (name === 'entry-crossing') {
+    startPosition = start - viewportSize;
+    duration = height;
+  }
   else if (name === 'contain') {
     startPosition = Math.min(end - viewportSize, start);
     // it's either VH - height OR height - VH; so it boils down to just the absolute value of that
@@ -225,6 +229,7 @@ function computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absolut
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
  * @param {AbsoluteOffsetContext} absoluteOffsetContext
+ * @param {Array<{element: HTMLElement, offset: number, sticky: {start?: number, end?: number}}>} offsetTree
  * @return {ScrollScene}
  */
 function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal, absoluteOffsetContext, offsetTree) {
