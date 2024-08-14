@@ -137,6 +137,10 @@ function transformRangeToPosition (range, viewportSize, rect) {
     startPosition = Math.max(start, end - viewportSize);
     duration = Math.min(viewportSize, height);
   }
+  else if (name === 'exit-crossing') {
+    startPosition = start;
+    duration = height;
+  }
   else if (name === 'cover') {
     startPosition = start - viewportSize;
     duration = height + viewportSize;
@@ -218,6 +222,7 @@ function computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absolut
       }
     }
   });
+
   return newAbsoluteRange;
 }
 
@@ -244,28 +249,38 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
   if (typeof duration === 'string') {
     startRange = { name: duration, offset: 0 };
     endRange = { name: duration, offset: 100 };
+
     startOffset = transformRangeToPosition(startRange, viewportSize, rect);
     endOffset = transformRangeToPosition(endRange, viewportSize, rect);
     overrideDuration = endOffset - startOffset;
+
     const newAbsoluteRange = computeStickinessIntoFullRange(offsetTree, startOffset, endOffset, viewportSize, isHorizontal);
+
     startOffset = newAbsoluteRange.start;
     endOffset = newAbsoluteRange.end;
   }
   else {
     if (startRange || start?.name) {
       startRange = startRange || start;
+
       const startAdd = transformAbsoluteOffsetToNumber(startRange.add, absoluteOffsetContext);
       const absoluteStartOffset = transformRangeToPosition({...startRange, offset: 0}, viewportSize, rect);
       const absoluteEndOffset = transformRangeToPosition({...startRange, offset: 100}, viewportSize, rect);
+      // we take 0% to 100% of the named range for start, and we compute the position by adding the sticky addition for the given start offset
       const newAbsoluteRange = computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absoluteEndOffset, viewportSize, isHorizontal);
+
       startOffset = newAbsoluteRange.start + (startRange.offset / 100) * (newAbsoluteRange.end - newAbsoluteRange.start) + startAdd;
     }
+
     if (endRange || end?.name) {
       endRange = endRange || end;
+
       const endAdd = transformAbsoluteOffsetToNumber(endRange.add, absoluteOffsetContext);
       const absoluteStartOffset = transformRangeToPosition({...endRange, offset: 0}, viewportSize, rect);
       const absoluteEndOffset = transformRangeToPosition({...endRange, offset: 100}, viewportSize, rect);
+      // we take 0% to 100% of the named range for end, and we compute the position by adding the sticky addition for the given end offset
       const newAbsoluteRange = computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absoluteEndOffset, viewportSize, isHorizontal);
+
       endOffset = newAbsoluteRange.start + (endRange.offset / 100) * (newAbsoluteRange.end - newAbsoluteRange.start) + endAdd;
     }
     else if (typeof duration === 'number') {
@@ -273,7 +288,7 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
     }
   }
 
-  return {...scene, start: startOffset, end: endOffset, startRange, endRange, duration: overrideDuration || duration };
+  return {...scene, start: startOffset, end: endOffset, startRange, endRange, duration: overrideDuration || duration || (endOffset - startOffset) };
 }
 
 /**
@@ -355,15 +370,15 @@ function getStickyData (style, isHorizontal) {
 /**
  * Returns a converted scene data from ranges into offsets in pixels.
  *
- * @param {ScrollScene} scene
+ * @param {ScrollScene[]} scene
  * @param {Window|HTMLElement} root
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
  * @param {AbsoluteOffsetContext} absoluteOffsetContext
- * @return {ScrollScene}
+ * @return {ScrollScene[]}
  */
-function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteOffsetContext) {
-  const element = scene.viewSource;
+function getTransformedSceneGroup (scenes, root, viewportSize, isHorizontal, absoluteOffsetContext) {
+  const element = scenes[0].viewSource;
   const elementStyle = window.getComputedStyle(element);
   const isElementSticky = getIsSticky(elementStyle);
   const elementStickiness = isElementSticky ? getStickyData(elementStyle, isHorizontal) : undefined;
@@ -417,19 +432,17 @@ function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteO
 
   offsetTree.reverse();
 
-  const transformedScene = transformSceneRangesToOffsets(
+  const transformedScenes = scenes.map(scene => transformSceneRangesToOffsets(
     scene,
     {start: elementLayoutStart, end: elementLayoutStart + size},
     viewportSize,
     isHorizontal,
     absoluteOffsetContext,
     offsetTree
-  );
+  ));
+  transformedScenes.forEach(scene => {scene.isFixed = isFixed;});
 
-  transformedScene.isFixed = isFixed;
-
-
-  return transformedScene;
+  return transformedScenes;
 }
 
 const VIEWPORT_RESIZE_INTERVAL = 100;
@@ -523,45 +536,58 @@ function getController (config) {
   /*
    * Prepare scenes data.
    */
-  _config.scenes = config.scenes.map((scene, index) => {
-    scene.index = index;
-
-    if (scene.viewSource && (typeof scene.duration === 'string' || scene.start?.name)) {
-      scene = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
+  _config.scenes = Object.values(
+    config.scenes.reduce((acc, scene, index) => {
+      const key = scene.groupId || String(index);
+      if (acc[key]) {
+        acc[key].push(scene);
+      } else {
+        acc[key] = [scene];
+      }
+      return acc;
+    },
+    {})
+  ).flatMap(sceneGroup => {
+    if (sceneGroup.every(scene => (scene.viewSource && (typeof scene.duration === 'string' || scene.start?.name)))) {
+      sceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
 
       if (_config.observeSourcesResize) {
-        rangesToObserve.push(scene);
+        rangesToObserve.push(sceneGroup);
       }
-    }
-    else if (scene.end == null) {
-      scene.end = scene.start + scene.duration;
+    } else {
+      sceneGroup.forEach(scene => {
+        if (scene.end == null) {
+          scene.end = scene.start + scene.duration;
+        }
+        if (scene.duration == null) {
+          scene.duration = scene.end - scene.start;
+        }    
+      });
     }
 
-    if (scene.duration == null) {
-      scene.duration = scene.end - scene.start;
-    }
-
-    return scene;
+    return sceneGroup;
   });
+  _config.scenes.forEach((scene, index) => {scene.index = index;});
 
   if (rangesToObserve.length) {
     if (window.ResizeObserver) {
-      const targetToScene = new Map();
+      const targetToSceneGroup = new Map();
 
       rangesResizeObserver = new window.ResizeObserver(function (entries) {
         entries.forEach(entry => {
-          const scene = targetToScene.get(entry.target);
+          const sceneGroup = targetToSceneGroup.get(entry.target);
           // TODO: try to optimize by using `const {blockSize, inlineSize} = entry.borderBoxSize[0]`
-          _config.scenes[scene.index] = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
+          const transformedSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
+          transformedSceneGroup.forEach((scene, localIndex) => {_config.scenes[scene.index] = transformedSceneGroup[localIndex];});
 
           // replace the old object from the cache with the new one
-          rangesToObserve.splice(rangesToObserve.indexOf(scene), 1, _config.scenes[scene.index]);
+          rangesToObserve.splice(rangesToObserve.indexOf(sceneGroup), 1, transformedSceneGroup);
         });
       });
 
-      rangesToObserve.forEach(scene => {
-        rangesResizeObserver.observe(scene.viewSource, {box: 'border-box'});
-        targetToScene.set(scene.viewSource, scene);
+      rangesToObserve.forEach(sceneGroup => {
+        rangesResizeObserver.observe(sceneGroup[0].viewSource, {box: 'border-box'});
+        targetToSceneGroup.set(sceneGroup[0].viewSource, sceneGroup);
       });
     }
 
@@ -569,12 +595,11 @@ function getController (config) {
       viewportResizeHandler = debounce(function () {
         viewportSize = getViewportSize(root, horizontal);
 
-        const newRanges = rangesToObserve.map(scene => {
-          const newScene = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
+        const newRanges = rangesToObserve.map(sceneGroup => {
+          const newSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
+          newSceneGroup.forEach((scene, localIndex) => {_config.scenes[scene.index] = newSceneGroup[localIndex];});
 
-          _config.scenes[scene.index] = newScene;
-
-          return newScene;
+          return newSceneGroup;
         });
 
         // reset cache

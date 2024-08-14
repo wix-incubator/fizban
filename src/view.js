@@ -50,6 +50,10 @@ function transformRangeToPosition (range, viewportSize, rect) {
     startPosition = Math.max(start, end - viewportSize);
     duration = Math.min(viewportSize, height);
   }
+  else if (name === 'exit-crossing') {
+    startPosition = start;
+    duration = height;
+  }
   else if (name === 'cover') {
     startPosition = start - viewportSize;
     duration = height + viewportSize;
@@ -197,7 +201,7 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
     }
   }
 
-  return {...scene, start: startOffset, end: endOffset, startRange, endRange, duration: overrideDuration || duration };
+  return {...scene, start: startOffset, end: endOffset, startRange, endRange, duration: overrideDuration || duration || (endOffset - startOffset) };
 }
 
 /**
@@ -279,15 +283,15 @@ function getStickyData (style, isHorizontal) {
 /**
  * Returns a converted scene data from ranges into offsets in pixels.
  *
- * @param {ScrollScene} scene
+ * @param {ScrollScene[]} scene
  * @param {Window|HTMLElement} root
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
  * @param {AbsoluteOffsetContext} absoluteOffsetContext
- * @return {ScrollScene}
+ * @return {ScrollScene[]}
  */
-export function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteOffsetContext) {
-  const element = scene.viewSource;
+export function getTransformedSceneGroup (scenes, root, viewportSize, isHorizontal, absoluteOffsetContext) {
+  const element = scenes[0].viewSource;
   const elementStyle = window.getComputedStyle(element);
   const isElementSticky = getIsSticky(elementStyle);
   const elementStickiness = isElementSticky ? getStickyData(elementStyle, isHorizontal) : undefined;
@@ -341,17 +345,16 @@ export function getTransformedScene (scene, root, viewportSize, isHorizontal, ab
 
   offsetTree.reverse();
 
-  const transformedScene = transformSceneRangesToOffsets(
+  const transformedScenes = scenes.map(scene => transformSceneRangesToOffsets(
     scene,
     {start: elementLayoutStart, end: elementLayoutStart + size},
     viewportSize,
     isHorizontal,
     absoluteOffsetContext,
     offsetTree
-  );
+  ));
+  transformedScenes.forEach(scene => {scene.isFixed = isFixed;})
 
-  transformedScene.isFixed = isFixed;
-
-  return transformedScene;
+  return transformedScenes;
 }
 

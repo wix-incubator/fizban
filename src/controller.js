@@ -1,5 +1,5 @@
 import { debounce, defaultTo } from './utilities.js';
-import { getTransformedScene } from './view.js';
+import { getTransformedSceneGroup } from './view.js';
 
 const VIEWPORT_RESIZE_INTERVAL = 100;
 
@@ -92,45 +92,58 @@ export function getController (config) {
   /*
    * Prepare scenes data.
    */
-  _config.scenes = config.scenes.map((scene, index) => {
-    scene.index = index;
-
-    if (scene.viewSource && (typeof scene.duration === 'string' || scene.start?.name)) {
-      scene = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
+  _config.scenes = Object.values(
+    config.scenes.reduce((acc, scene, index) => {
+      const key = scene.groupId || String(index);
+      if (acc[key]) {
+        acc[key].push(scene)
+      } else {
+        acc[key] = [scene];
+      }
+      return acc;
+    },
+    {})
+  ).flatMap(sceneGroup => {
+    if (sceneGroup.every(scene => (scene.viewSource && (typeof scene.duration === 'string' || scene.start?.name)))) {
+      sceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
 
       if (_config.observeSourcesResize) {
-        rangesToObserve.push(scene);
+        rangesToObserve.push(sceneGroup);
       }
-    }
-    else if (scene.end == null) {
-      scene.end = scene.start + scene.duration;
+    } else {
+      sceneGroup.forEach(scene => {
+        if (scene.end == null) {
+          scene.end = scene.start + scene.duration;
+        }
+        if (scene.duration == null) {
+          scene.duration = scene.end - scene.start;
+        }    
+      });
     }
 
-    if (scene.duration == null) {
-      scene.duration = scene.end - scene.start;
-    }
-
-    return scene;
+    return sceneGroup;
   });
+  _config.scenes.forEach((scene, index) => {scene.index = index;})
 
   if (rangesToObserve.length) {
     if (window.ResizeObserver) {
-      const targetToScene = new Map();
+      const targetToSceneGroup = new Map();
 
       rangesResizeObserver = new window.ResizeObserver(function (entries) {
         entries.forEach(entry => {
-          const scene = targetToScene.get(entry.target);
+          const sceneGroup = targetToSceneGroup.get(entry.target);
           // TODO: try to optimize by using `const {blockSize, inlineSize} = entry.borderBoxSize[0]`
-          _config.scenes[scene.index] = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
+          const transformedSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
+          transformedSceneGroup.forEach((scene, localIndex) => {_config.scenes[scene.index] = transformedSceneGroup[localIndex];});
 
           // replace the old object from the cache with the new one
-          rangesToObserve.splice(rangesToObserve.indexOf(scene), 1, _config.scenes[scene.index]);
+          rangesToObserve.splice(rangesToObserve.indexOf(sceneGroup), 1, transformedSceneGroup);
         })
       });
 
-      rangesToObserve.forEach(scene => {
-        rangesResizeObserver.observe(scene.viewSource, {box: 'border-box'});
-        targetToScene.set(scene.viewSource, scene);
+      rangesToObserve.forEach(sceneGroup => {
+        rangesResizeObserver.observe(sceneGroup[0].viewSource, {box: 'border-box'});
+        targetToSceneGroup.set(sceneGroup[0].viewSource, sceneGroup);
       });
     }
 
@@ -138,12 +151,11 @@ export function getController (config) {
       viewportResizeHandler = debounce(function () {
         viewportSize = getViewportSize(root, horizontal);
 
-        const newRanges = rangesToObserve.map(scene => {
-          const newScene = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
+        const newRanges = rangesToObserve.map(sceneGroup => {
+          const newSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
+          newSceneGroup.forEach((scene, localIndex) => {_config.scenes[scene.index] = newSceneGroup[localIndex];});
 
-          _config.scenes[scene.index] = newScene;
-
-          return newScene;
+          return newSceneGroup;
         });
 
         // reset cache
