@@ -165,7 +165,8 @@ test('start :: effect progress :: view ranges :: sceneGroup', t => {
         },
         start: {name: 'entry', offset: 50}, // 275
         end: {name: 'contain', offset: 50}, // 325
-        viewSource: element
+        viewSource: element,
+        groupId: 'awesomeGroup'
       },
       {
         effect(s, p) {
@@ -173,7 +174,8 @@ test('start :: effect progress :: view ranges :: sceneGroup', t => {
         },
         start: {name: 'cover', offset: 0}, // 250
         end: {name: 'exit', offset: 75}, // 387.5
-        viewSource: element
+        viewSource: element,
+        groupId: 'awesomeGroup'
       }
     ]
   });
