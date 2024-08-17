@@ -88,6 +88,7 @@ function debounce (fn, interval) {
 /**
  * parses offsetString of the format calc(<length> + <length>)
  * @param {string|undefined} offsetString
+ * @param {AbsoluteOffsetContext} absoluteOffsetContext
  */
 function parseOffsetCalc(offsetString, absoluteOffsetContext) {
   const match = offsetString.match(/^calc\s*\(\s*(-?\d+((px)|(vh)|(vw)))\s*\+\s*(-?\d+((px)|(vh)|(vw)))\s*\)\s*$/);
