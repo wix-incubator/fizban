@@ -948,6 +948,8 @@ class Scroll {
  * @property {boolean} [disabled] whether to perform updates on the scene. Defaults to false.
  * @property {Element} [viewSource] an element to be used for observing intersection with viewport for disabling/enabling the scene, or the source of a ViewTimeline if scene start/end are provided as ranges.
  * @property {function} [destroy] a function clean up the scene when it's controller is destroyed.
+ * @property {string} [groupId] a string id to group together scenes
+ * @property {Promise} [ready] a promise that is resolved once the effects are ready.
  */
 
 /**
