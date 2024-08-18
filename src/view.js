@@ -1,4 +1,14 @@
 /**
+ * parses offsetString of the format calc(<length> + <length>)
+ * @param {string|undefined} offsetString
+ * @param {AbsoluteOffsetContext} absoluteOffsetContext
+ */
+function parseOffsetCalc(offsetString, absoluteOffsetContext) {
+  const match = offsetString.match(/^calc\s*\(\s*(-?\d+((px)|(vh)|(vw)))\s*\+\s*(-?\d+((px)|(vh)|(vw)))\s*\)\s*$/);
+  return transformAbsoluteOffsetToNumber(match[1], absoluteOffsetContext) + transformAbsoluteOffsetToNumber(match[6], absoluteOffsetContext);
+}
+
+/**
  * Convert an absolute offset as string to number of pixels
  *
  * @param {string|undefined} offsetString
@@ -13,7 +23,9 @@ function transformAbsoluteOffsetToNumber (offsetString, absoluteOffsetContext) {
         ? parseInt(offsetString) * absoluteOffsetContext.viewportHeight / 100
         : /^-?\d+vw$/.test(offsetString)
           ? parseInt(offsetString) * absoluteOffsetContext.viewportWidth / 100
-          : parseInt(offsetString) || 0
+          : /^calc\s*\(\s*-?\d+((px)|(vh)|(vw))\s*\+\s*-?\d+((px)|(vh)|(vw))\s*\)\s*$/.test(offsetString)
+            ? parseOffsetCalc(offsetString, absoluteOffsetContext)
+            : parseInt(offsetString) || 0
     : 0;
 }
 
@@ -49,6 +61,10 @@ function transformRangeToPosition (range, viewportSize, rect) {
   else if (name === 'exit') {
     startPosition = Math.max(start, end - viewportSize);
     duration = Math.min(viewportSize, height);
+  }
+  else if (name === 'exit-crossing') {
+    startPosition = start;
+    duration = height;
   }
   else if (name === 'cover') {
     startPosition = start - viewportSize;
@@ -197,7 +213,7 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
     }
   }
 
-  return {...scene, start: startOffset, end: endOffset, startRange, endRange, duration: overrideDuration || duration };
+  return {...scene, start: startOffset, end: endOffset, startRange, endRange, duration: overrideDuration || duration || (endOffset - startOffset) };
 }
 
 /**
@@ -279,15 +295,15 @@ function getStickyData (style, isHorizontal) {
 /**
  * Returns a converted scene data from ranges into offsets in pixels.
  *
- * @param {ScrollScene} scene
+ * @param {ScrollScene[]} scene
  * @param {Window|HTMLElement} root
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
  * @param {AbsoluteOffsetContext} absoluteOffsetContext
- * @return {ScrollScene}
+ * @return {ScrollScene[]}
  */
-export function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteOffsetContext) {
-  const element = scene.viewSource;
+export function getTransformedSceneGroup (scenes, root, viewportSize, isHorizontal, absoluteOffsetContext) {
+  const element = scenes[0].viewSource;
   const elementStyle = window.getComputedStyle(element);
   const isElementSticky = getIsSticky(elementStyle);
   const elementStickiness = isElementSticky ? getStickyData(elementStyle, isHorizontal) : undefined;
@@ -341,17 +357,16 @@ export function getTransformedScene (scene, root, viewportSize, isHorizontal, ab
 
   offsetTree.reverse();
 
-  const transformedScene = transformSceneRangesToOffsets(
+  const transformedScenes = scenes.map(scene => transformSceneRangesToOffsets(
     scene,
     {start: elementLayoutStart, end: elementLayoutStart + size},
     viewportSize,
     isHorizontal,
     absoluteOffsetContext,
     offsetTree
-  );
+  ));
+  transformedScenes.forEach(scene => {scene.isFixed = isFixed;})
 
-  transformedScene.isFixed = isFixed;
-
-  return transformedScene;
+  return transformedScenes;
 }
 

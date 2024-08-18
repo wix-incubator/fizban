@@ -1,4 +1,4 @@
-declare type RangeName = 'entry' | 'exit' | 'contain' | 'cover';
+declare type RangeName = 'entry' | 'exit' | 'contain' | 'cover' | 'entry-crossing' | 'exit-crossing';
 
 declare type RangeOffset = {
   name?: RangeName;
@@ -6,7 +6,7 @@ declare type RangeOffset = {
 };
 
 declare type scrollConfig = {
-  scenes: ScrollScene;
+  scenes: ScrollScene[];
   transitionActive?: boolean;
   transitionFriction?: number;
 }
@@ -18,6 +18,8 @@ declare type ScrollScene = {
   end?: RangeOffset;
   disabled?: boolean;
   viewSource?: HTMLElement;
+  groupId?: string;
+  ready?: Promise<void>;
 }
 
 declare module "fizban";

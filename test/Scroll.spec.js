@@ -142,6 +142,77 @@ test('start :: effect progress :: view ranges', t => {
   t.is(progress, 1);
 });
 
+test('start :: effect progress :: view ranges :: sceneGroup', t => {
+  const element = {
+    offsetHeight: 100,
+    offsetTop: 100,
+    offsetParent: {
+      offsetTop: 200,
+      offsetParent: {
+        offsetTop: 0
+      }
+    }
+  };
+
+  let progress = [0, 0];
+
+  const scroll = new Scroll({
+    root: window,
+    scenes: [
+      {
+        effect(s, p) {
+          progress[0] = p;
+        },
+        start: {name: 'entry', offset: 50}, // 275
+        end: {name: 'contain', offset: 50}, // 325
+        viewSource: element,
+        groupId: 'awesomeGroup'
+      },
+      {
+        effect(s, p) {
+          progress[1] = p;
+        },
+        start: {name: 'cover', offset: 0}, // 250
+        end: {name: 'exit', offset: 75}, // 387.5
+        viewSource: element,
+        groupId: 'awesomeGroup'
+      }
+    ]
+  });
+
+  scroll.start();
+
+  window.scrollTo(0, 250);
+  window.executeAnimationFrame(0);
+
+  t.is(progress[0], 0);
+  t.is(progress[1], 0);
+
+  window.scrollTo(0, 285);
+  window.executeAnimationFrame(1);
+
+  t.is(progress[0], 0.2);
+  t.is(+progress[1].toFixed(3), 0.255);
+
+  window.scrollTo(0, 300);
+  window.executeAnimationFrame(2);
+
+  t.is(progress[0], 0.5);
+  t.is(+progress[1].toFixed(3), 0.364);
+
+  window.scrollTo(0, 325);
+  window.executeAnimationFrame(3);
+
+  t.is(progress[0], 1);
+  t.is(+progress[1].toFixed(3), 0.545);
+
+  window.scrollTo(0, 390);
+  window.executeAnimationFrame(3);
+
+  t.is(progress[0], 1);
+  t.is(progress[1], 1);
+});
+
 test('start :: effect progress :: view ranges :: add absolute offsets', t => {
   const element = {
     offsetHeight: 100,
