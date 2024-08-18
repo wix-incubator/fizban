@@ -24,7 +24,7 @@ function transformAbsoluteOffsetToNumber (offsetString, absoluteOffsetContext) {
         : /^-?\d+vw$/.test(offsetString)
           ? parseInt(offsetString) * absoluteOffsetContext.viewportWidth / 100
           : /^calc\s*\(\s*-?\d+((px)|(vh)|(vw))\s*\+\s*-?\d+((px)|(vh)|(vw))\s*\)\s*$/.test(offsetString)
-            ? parseOffsetCalc(offsetString)
+            ? parseOffsetCalc(offsetString, absoluteOffsetContext)
             : parseInt(offsetString) || 0
     : 0;
 }
