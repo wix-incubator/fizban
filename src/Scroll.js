@@ -223,7 +223,7 @@ export class Scroll {
  */
 
 /**
- * @typedef {'entry' | 'contain' | 'exit' | 'cover'} RangeName
+ * @typedef {'entry' | 'contain' | 'exit' | 'cover' | 'entry-crossing' | 'exit-crossing'} RangeName
  */
 
 /**

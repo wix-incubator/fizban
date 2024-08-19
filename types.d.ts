@@ -1,4 +1,4 @@
-declare type RangeName = 'entry' | 'exit' | 'contain' | 'cover';
+declare type RangeName = 'entry' | 'exit' | 'contain' | 'cover' | 'entry-crossing' | 'exit-crossing';
 
 declare type RangeOffset = {
   name?: RangeName;
