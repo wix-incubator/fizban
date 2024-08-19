@@ -62,6 +62,10 @@ function transformRangeToPosition (range, viewportSize, rect) {
     startPosition = Math.max(start, end - viewportSize);
     duration = Math.min(viewportSize, height);
   }
+  else if (name === 'exit-crossing') {
+    startPosition = start;
+    duration = height;
+  }
   else if (name === 'cover') {
     startPosition = start - viewportSize;
     duration = height + viewportSize;

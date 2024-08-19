@@ -271,3 +271,19 @@ test('start :: entry 40% :: start add calc(10vh + 25px) :: end cover 100% :: end
   t.is(result.start, 0); // -30 + 30 = 0
   t.is(result.end, 300); // 150 + 150 = 300
 });
+
+test('start :: entry-crossing 40% :: end :: exit-crossing 70%', t => {
+  const input = getScene({
+    viewSource: {
+      offsetParent: {},
+      offsetHeight: 150
+    },
+    start: {name: 'entry-crossing', offset: 40},
+    end: {name: 'exit-crossing', offset: 70},
+  });
+
+  const result = getTransformedScene(input, null, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL, smallAbsoluteOffsetContext);
+
+  t.is(result.start, 10);
+  t.is(result.end, 105);
+});

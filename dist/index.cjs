@@ -149,6 +149,10 @@ function transformRangeToPosition (range, viewportSize, rect) {
     startPosition = Math.max(start, end - viewportSize);
     duration = Math.min(viewportSize, height);
   }
+  else if (name === 'exit-crossing') {
+    startPosition = start;
+    duration = height;
+  }
   else if (name === 'cover') {
     startPosition = start - viewportSize;
     duration = height + viewportSize;
@@ -944,7 +948,7 @@ class Scroll {
  */
 
 /**
- * @typedef {'entry' | 'contain' | 'exit' | 'cover'} RangeName
+ * @typedef {'entry' | 'contain' | 'exit' | 'cover' | 'entry-crossing' | 'exit-crossing'} RangeName
  */
 
 /**
