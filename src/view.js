@@ -1,4 +1,14 @@
 /**
+ * parses offsetString of the format calc(<length> + <length>)
+ * @param {string|undefined} offsetString
+ * @param {AbsoluteOffsetContext} absoluteOffsetContext
+ */
+function parseOffsetCalc(offsetString, absoluteOffsetContext) {
+  const match = offsetString.match(/^calc\s*\(\s*(-?\d+((px)|(vh)|(vw)))\s*\+\s*(-?\d+((px)|(vh)|(vw)))\s*\)\s*$/);
+  return transformAbsoluteOffsetToNumber(match[1], absoluteOffsetContext) + transformAbsoluteOffsetToNumber(match[6], absoluteOffsetContext);
+}
+
+/**
  * Convert an absolute offset as string to number of pixels
  *
  * @param {string|undefined} offsetString
@@ -13,7 +23,9 @@ function transformAbsoluteOffsetToNumber (offsetString, absoluteOffsetContext) {
         ? parseInt(offsetString) * absoluteOffsetContext.viewportHeight / 100
         : /^-?\d+vw$/.test(offsetString)
           ? parseInt(offsetString) * absoluteOffsetContext.viewportWidth / 100
-          : parseInt(offsetString) || 0
+          : /^calc\s*\(\s*-?\d+((px)|(vh)|(vw))\s*\+\s*-?\d+((px)|(vh)|(vw))\s*\)\s*$/.test(offsetString)
+            ? parseOffsetCalc(offsetString, absoluteOffsetContext)
+            : parseInt(offsetString) || 0
     : 0;
 }
 
