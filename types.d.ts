@@ -6,7 +6,7 @@ declare type RangeOffset = {
 };
 
 declare type scrollConfig = {
-  scenes: ScrollScene;
+  scenes: ScrollScene[];
   transitionActive?: boolean;
   transitionFriction?: number;
 }
@@ -18,6 +18,7 @@ declare type ScrollScene = {
   end?: RangeOffset;
   disabled?: boolean;
   viewSource?: HTMLElement;
+  groupId?: string;
 }
 
 declare module "fizban";

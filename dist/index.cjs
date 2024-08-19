@@ -300,6 +300,10 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
     }
   }
 
+  if (!overrideDuration && !duration) {
+    overrideDuration = endOffset - startOffset;
+  }
+
   return {...scene, start: startOffset, end: endOffset, startRange, endRange, duration: overrideDuration || duration };
 }
 
@@ -380,17 +384,17 @@ function getStickyData (style, isHorizontal) {
 }
 
 /**
- * Returns a converted scene data from ranges into offsets in pixels.
+ * Returns an array of converted scenes' data for grouped scenes (assumes same viewSource) from ranges into offsets in pixels.
  *
- * @param {ScrollScene} scene
+ * @param {ScrollScene[]} scenes
  * @param {Window|HTMLElement} root
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
  * @param {AbsoluteOffsetContext} absoluteOffsetContext
- * @return {ScrollScene}
+ * @return {ScrollScene[]}
  */
-function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteOffsetContext) {
-  const element = scene.viewSource;
+function getTransformedSceneGroup (scenes, root, viewportSize, isHorizontal, absoluteOffsetContext) {
+  const element = scenes[0].viewSource;
   const elementStyle = window.getComputedStyle(element);
   const isElementSticky = getIsSticky(elementStyle);
   const elementStickiness = isElementSticky ? getStickyData(elementStyle, isHorizontal) : undefined;
@@ -444,18 +448,17 @@ function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteO
 
   offsetTree.reverse();
 
-  const transformedScene = transformSceneRangesToOffsets(
+  const transformedScenes = scenes.map(scene => transformSceneRangesToOffsets(
     scene,
     {start: elementLayoutStart, end: elementLayoutStart + size},
     viewportSize,
     isHorizontal,
     absoluteOffsetContext,
     offsetTree
-  );
+  ));
+  transformedScenes.forEach(scene => {scene.isFixed = isFixed;});
 
-  transformedScene.isFixed = isFixed;
-
-  return transformedScene;
+  return transformedScenes;
 }
 
 const VIEWPORT_RESIZE_INTERVAL = 100;
@@ -475,6 +478,7 @@ const DEFAULTS$1 = {
 /*
  * Utilities for scroll controller
  */
+
 
 /**
  * Utility for calculating effect progress.
@@ -549,45 +553,56 @@ function getController (config) {
   /*
    * Prepare scenes data.
    */
-  _config.scenes = config.scenes.map((scene, index) => {
-    scene.index = index;
-
-    if (scene.viewSource && (typeof scene.duration === 'string' || scene.start?.name)) {
-      scene = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
-
-      if (_config.observeSourcesResize) {
-        rangesToObserve.push(scene);
+  _config.scenes = Object.values(
+    config.scenes.reduce((acc, scene, index) => {
+      const key = scene.groupId ? `group-${scene.groupId}` : String(index);
+      if (acc[key]) {
+        acc[key].push(scene);
+      } else {
+        acc[key] = [scene];
       }
-    }
-    else if (scene.end == null) {
-      scene.end = scene.start + scene.duration;
+      return acc;
+    },
+    {})
+  ).flatMap(sceneGroup => {
+    if (sceneGroup.every(scene => (scene.viewSource && (typeof scene.duration === 'string' || scene.start?.name)))) {
+      sceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
+      if (_config.observeSourcesResize) {
+        rangesToObserve.push(sceneGroup);
+      }
+    } else {
+      sceneGroup.forEach(scene => {
+        if (scene.end == null) {
+          scene.end = scene.start + scene.duration;
+        }
+        if (scene.duration == null) {
+          scene.duration = scene.end - scene.start;
+        }    
+      });
     }
 
-    if (scene.duration == null) {
-      scene.duration = scene.end - scene.start;
-    }
-
-    return scene;
+    return sceneGroup;
   });
+  _config.scenes.forEach((scene, index) => {scene.index = index;});
 
   if (rangesToObserve.length) {
     if (window.ResizeObserver) {
-      const targetToScene = new Map();
+      const targetToSceneGroup = new Map();
 
       rangesResizeObserver = new window.ResizeObserver(function (entries) {
         entries.forEach(entry => {
-          const scene = targetToScene.get(entry.target);
+          const sceneGroup = targetToSceneGroup.get(entry.target);
           // TODO: try to optimize by using `const {blockSize, inlineSize} = entry.borderBoxSize[0]`
-          _config.scenes[scene.index] = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
-
+          const transformedSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
+          transformedSceneGroup.forEach((scene, localIndex) => {_config.scenes[scene.index] = transformedSceneGroup[localIndex];});
           // replace the old object from the cache with the new one
-          rangesToObserve.splice(rangesToObserve.indexOf(scene), 1, _config.scenes[scene.index]);
+          rangesToObserve.splice(rangesToObserve.indexOf(sceneGroup), 1, transformedSceneGroup);
         });
       });
 
-      rangesToObserve.forEach(scene => {
-        rangesResizeObserver.observe(scene.viewSource, {box: 'border-box'});
-        targetToScene.set(scene.viewSource, scene);
+      rangesToObserve.forEach(sceneGroup => {
+        rangesResizeObserver.observe(sceneGroup[0].viewSource, {box: 'border-box'});
+        targetToSceneGroup.set(sceneGroup[0].viewSource, sceneGroup);
       });
     }
 
@@ -595,12 +610,11 @@ function getController (config) {
       viewportResizeHandler = debounce(function () {
         viewportSize = getViewportSize(root, horizontal);
 
-        const newRanges = rangesToObserve.map(scene => {
-          const newScene = getTransformedScene(scene, root, viewportSize, horizontal, absoluteOffsetContext);
+        const newRanges = rangesToObserve.map(sceneGroup => {
+          const newSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
+          newSceneGroup.forEach((scene, localIndex) => {_config.scenes[scene.index] = newSceneGroup[localIndex];});
 
-          _config.scenes[scene.index] = newScene;
-
-          return newScene;
+          return newSceneGroup;
         });
 
         // reset cache
@@ -938,6 +952,7 @@ class Scroll {
  * @property {boolean} [disabled] whether to perform updates on the scene. Defaults to false.
  * @property {Element} [viewSource] an element to be used for observing intersection with viewport for disabling/enabling the scene, or the source of a ViewTimeline if scene start/end are provided as ranges.
  * @property {function} [destroy] a function clean up the scene when it's controller is destroyed.
+ * @property {string} [groupId] a string id for a group of scenes sharing same viewSource and part of the same overall animation
  */
 
 /**

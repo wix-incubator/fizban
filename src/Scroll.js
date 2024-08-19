@@ -213,6 +213,7 @@ export class Scroll {
  * @property {boolean} [disabled] whether to perform updates on the scene. Defaults to false.
  * @property {Element} [viewSource] an element to be used for observing intersection with viewport for disabling/enabling the scene, or the source of a ViewTimeline if scene start/end are provided as ranges.
  * @property {function} [destroy] a function clean up the scene when it's controller is destroyed.
+ * @property {string} [groupId] a string id for a group of scenes sharing same viewSource and part of the same overall animation
  */
 
 /**
