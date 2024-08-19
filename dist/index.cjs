@@ -92,8 +92,6 @@ function debounce (fn, interval) {
  */
 function parseOffsetCalc(offsetString, absoluteOffsetContext) {
   const match = offsetString.match(/^calc\s*\(\s*(-?\d+((px)|(vh)|(vw)))\s*\+\s*(-?\d+((px)|(vh)|(vw)))\s*\)\s*$/);
-  console.log(transformAbsoluteOffsetToNumber(match[1], absoluteOffsetContext));
-  console.log(transformAbsoluteOffsetToNumber(match[6], absoluteOffsetContext));
   return transformAbsoluteOffsetToNumber(match[1], absoluteOffsetContext) + transformAbsoluteOffsetToNumber(match[6], absoluteOffsetContext);
 }
 
