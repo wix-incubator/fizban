@@ -213,6 +213,10 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
     }
   }
 
+  if (!overrideDuration && !duration) {
+    overrideDuration = endOffset - startOffset;
+  }
+
   return {...scene, start: startOffset, end: endOffset, startRange, endRange, duration: overrideDuration || duration };
 }
 
@@ -293,17 +297,17 @@ function getStickyData (style, isHorizontal) {
 }
 
 /**
- * Returns a converted scene data from ranges into offsets in pixels.
+ * Returns an array of converted scenes' data for grouped scenes (assumes same viewSource) from ranges into offsets in pixels.
  *
- * @param {ScrollScene} scene
+ * @param {ScrollScene[]} scenes
  * @param {Window|HTMLElement} root
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
  * @param {AbsoluteOffsetContext} absoluteOffsetContext
- * @return {ScrollScene}
+ * @return {ScrollScene[]}
  */
-export function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteOffsetContext) {
-  const element = scene.viewSource;
+export function getTransformedSceneGroup (scenes, root, viewportSize, isHorizontal, absoluteOffsetContext) {
+  const element = scenes[0].viewSource;
   const elementStyle = window.getComputedStyle(element);
   const isElementSticky = getIsSticky(elementStyle);
   const elementStickiness = isElementSticky ? getStickyData(elementStyle, isHorizontal) : undefined;
@@ -357,17 +361,32 @@ export function getTransformedScene (scene, root, viewportSize, isHorizontal, ab
 
   offsetTree.reverse();
 
-  const transformedScene = transformSceneRangesToOffsets(
-    scene,
-    {start: elementLayoutStart, end: elementLayoutStart + size},
-    viewportSize,
-    isHorizontal,
-    absoluteOffsetContext,
-    offsetTree
-  );
+  const transformedScenes = scenes.map(scene => ({
+    ...transformSceneRangesToOffsets(
+      scene,
+      {start: elementLayoutStart, end: elementLayoutStart + size},
+      viewportSize,
+      isHorizontal,
+      absoluteOffsetContext,
+      offsetTree
+    ),
+    isFixed
+  }));
 
-  transformedScene.isFixed = isFixed;
+  return transformedScenes;
+}
 
-  return transformedScene;
+/**
+ * Returns a converted scene data from ranges into offsets in pixels.
+ *
+ * @param {ScrollScene} scene
+ * @param {Window|HTMLElement} root
+ * @param {number} viewportSize
+ * @param {boolean} isHorizontal
+ * @param {AbsoluteOffsetContext} absoluteOffsetContext
+ * @return {ScrollScene}
+ */
+export function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteOffsetContext) {
+  return getTransformedSceneGroup([scene], root, viewportSize, isHorizontal, absoluteOffsetContext)[0];
 }
 

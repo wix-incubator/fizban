@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset='utf-8'>
-  <title>fizban 0.6.5 | Documentation</title>
+  <title>fizban 0.6.7 | Documentation</title>
   <meta name='description' content='Tiny library for performant scroll-driven effects'>
   <meta name='viewport' content='width=device-width,initial-scale=1'>
   <link href='assets/bass.css' rel='stylesheet'>
@@ -15,7 +15,7 @@
       <div id='split-left' class='overflow-auto fs0 height-viewport-100'>
         <div class='py1 px2'>
           <h3 class='mb0 no-anchor'>fizban</h3>
-          <div class='mb1'><code>0.6.5</code></div>
+          <div class='mb1'><code>0.6.7</code></div>
           <input
             placeholder='Filter'
             id='filter-input'
@@ -251,6 +251,16 @@
               
                 
                 <li><a
+                  href='#parseoffsetcalc'
+                  class="">
+                  parseOffsetCalc
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
                   href='#transformabsoluteoffsettonumber'
                   class="">
                   transformAbsoluteOffsetToNumber
@@ -314,6 +324,16 @@
                   href='#getrectstart'
                   class="">
                   getRectStart
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#gettransformedscenegroup'
+                  class="">
+                  getTransformedSceneGroup
                   
                 </a>
                 
@@ -1211,6 +1231,13 @@ scroll.<span class="hljs-title function_">start</span>();</pre>
           
         </div>
       
+        <div class='space-bottom0'>
+          <span class='code bold'>groupId</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?)</code>
+          : a string id for a group of scenes sharing same viewSource and part of the same overall animation
+
+          
+        </div>
+      
     </div>
   
 
@@ -1418,7 +1445,7 @@ scroll.<span class="hljs-title function_">start</span>();</pre>
   
     <p>
       Type:
-      (<code>"entry"</code> | <code>"contain"</code> | <code>"exit"</code> | <code>"cover"</code>)
+      (<code>"entry"</code> | <code>"contain"</code> | <code>"exit"</code> | <code>"cover"</code> | <code>"entry-crossing"</code> | <code>"exit-crossing"</code>)
     </p>
   
   
@@ -2081,6 +2108,77 @@ Keeps the arguments from last call, even if that call gets ignored.</p>
   
   <div class='clearfix'>
     
+    <h3 class='fl m0' id='parseoffsetcalc'>
+      parseOffsetCalc
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>parses offsetString of the format calc( + )</p>
+
+    <div class='pre p1 fill-light mt0'>parseOffsetCalc(offsetString: (<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/undefined">undefined</a>), absoluteOffsetContext: <a href="#absoluteoffsetcontext">AbsoluteOffsetContext</a>)</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>offsetString</span> <code class='quiet'>((<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/undefined">undefined</a>))</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>absoluteOffsetContext</span> <code class='quiet'>(<a href="#absoluteoffsetcontext">AbsoluteOffsetContext</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
     <h3 class='fl m0' id='transformabsoluteoffsettonumber'>
       transformAbsoluteOffsetToNumber
     </h3>
@@ -2255,7 +2353,7 @@ Keeps the arguments from last call, even if that call gets ignored.</p>
 
   <p>Convert scene data in ranges into offsets in pixels.</p>
 
-    <div class='pre p1 fill-light mt0'>transformSceneRangesToOffsets(scene: <a href="#scrollscene">ScrollScene</a>, rect: {start: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, end: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>}, viewportSize: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, isHorizontal: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>, absoluteOffsetContext: <a href="#absoluteoffsetcontext">AbsoluteOffsetContext</a>): <a href="#scrollscene">ScrollScene</a></div>
+    <div class='pre p1 fill-light mt0'>transformSceneRangesToOffsets(scene: <a href="#scrollscene">ScrollScene</a>, rect: {start: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, end: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>}, viewportSize: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, isHorizontal: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>, absoluteOffsetContext: <a href="#absoluteoffsetcontext">AbsoluteOffsetContext</a>, offsetTree: any): <a href="#scrollscene">ScrollScene</a></div>
   
   
 
@@ -2305,6 +2403,14 @@ Keeps the arguments from last call, even if that call gets ignored.</p>
         <div class='space-bottom0'>
           <div>
             <span class='code bold'>absoluteOffsetContext</span> <code class='quiet'>(<a href="#absoluteoffsetcontext">AbsoluteOffsetContext</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>offsetTree</span> <code class='quiet'>(any)</code>
 	    
           </div>
           
@@ -2630,6 +2736,108 @@ Keeps the arguments from last call, even if that call gets ignored.</p>
     
       <div class='py1 quiet mt1 prose-big'>Returns</div>
       <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
+        
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='gettransformedscenegroup'>
+      getTransformedSceneGroup
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>Returns an array of converted scenes' data for grouped scenes (assumes same viewSource) from ranges into offsets in pixels.</p>
+
+    <div class='pre p1 fill-light mt0'>getTransformedSceneGroup(scenes: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#scrollscene">ScrollScene</a>>, root: (<a href="https://developer.mozilla.org/docs/Web/API/Window">Window</a> | <a href="https://developer.mozilla.org/docs/Web/HTML/Element">HTMLElement</a>), viewportSize: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, isHorizontal: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>, absoluteOffsetContext: <a href="#absoluteoffsetcontext">AbsoluteOffsetContext</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#scrollscene">ScrollScene</a>></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>scenes</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#scrollscene">ScrollScene</a>>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>root</span> <code class='quiet'>((<a href="https://developer.mozilla.org/docs/Web/API/Window">Window</a> | <a href="https://developer.mozilla.org/docs/Web/HTML/Element">HTMLElement</a>))</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>viewportSize</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>isHorizontal</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>absoluteOffsetContext</span> <code class='quiet'>(<a href="#absoluteoffsetcontext">AbsoluteOffsetContext</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#scrollscene">ScrollScene</a>></code>:
         
       
     
