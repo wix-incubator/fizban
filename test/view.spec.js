@@ -287,3 +287,25 @@ test('start :: entry-crossing 40% :: end :: exit-crossing 70%', t => {
   t.is(result.start, 10);
   t.is(result.end, 105);
 });
+
+test('start :: entry 40% :: start add calc(10cqh + 25px) :: end cover 100% :: end add calc(100cqw + 100px)', t => {
+  const input = getScene({
+    viewSource: {
+      offsetParent: {
+        offsetWidth: 100,
+        offsetHeight: 200,
+        style: {
+          containerType: 'size'
+        }
+      },
+      offsetHeight: 150,
+    },
+    start: {name: 'entry', offset: 40, add: 'calc(10cqh + 25px)'},   // add = 20px + 25px = 45px
+    end: {name: 'cover', offset: 100, add: 'calc(100cqw + 100px)'},  // add = 100px + 100px = 200px
+  });
+
+  const result = getTransformedScene(input, null, SMALLER_VIEWPORT_SIZE, IS_HORIZONTAL, smallAbsoluteOffsetContext);
+
+  t.is(result.start, 15); // -30 + 45 = 15
+  t.is(result.end, 350); // 150 + 200 = 350
+});
