@@ -556,6 +556,7 @@ function getController (config) {
    * Prepare scenes data.
    */
   _config.scenes = Object.values(
+    // TODO(ameerf): find a polyfill and use groupBy instead of following reduce
     config.scenes.reduce((acc, scene, index) => {
       const key = scene.groupId ? `group-${scene.groupId}` : String(index);
       if (acc[key]) {
