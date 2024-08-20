@@ -2,10 +2,11 @@
  * parses offsetString of the format calc(<length> + <length>)
  * @param {string|undefined} offsetString
  * @param {AbsoluteOffsetContext} absoluteOffsetContext
+ * @param {HTMLElement} container
  */
-function parseOffsetCalc(offsetString, absoluteOffsetContext) {
-  const match = offsetString.match(/^calc\s*\(\s*(-?\d+((px)|(vh)|(vw)))\s*\+\s*(-?\d+((px)|(vh)|(vw)))\s*\)\s*$/);
-  return transformAbsoluteOffsetToNumber(match[1], absoluteOffsetContext) + transformAbsoluteOffsetToNumber(match[6], absoluteOffsetContext);
+function parseOffsetCalc(offsetString, absoluteOffsetContext, container) {
+  const match = offsetString.match(/^calc\s*\(\s*(-?\d+((px)|(vh)|(vw)|(cqh)|(cqw)))\s*\+\s*(-?\d+((px)|(vh)|(vw)|(cqh)|(cqw)))\s*\)\s*$/);
+  return transformAbsoluteOffsetToNumber(match[1], absoluteOffsetContext, container) + transformAbsoluteOffsetToNumber(match[8], absoluteOffsetContext, container);
 }
 
 /**
@@ -13,9 +14,10 @@ function parseOffsetCalc(offsetString, absoluteOffsetContext) {
  *
  * @param {string|undefined} offsetString
  * @param {AbsoluteOffsetContext} absoluteOffsetContext
+ * @param {HTMLElement} container
  * @return {number}
  */
-function transformAbsoluteOffsetToNumber (offsetString, absoluteOffsetContext) {
+function transformAbsoluteOffsetToNumber (offsetString, absoluteOffsetContext, container) {
   return offsetString
     ? /^-?\d+px$/.test(offsetString)
       ? parseInt(offsetString)
@@ -23,9 +25,13 @@ function transformAbsoluteOffsetToNumber (offsetString, absoluteOffsetContext) {
         ? parseInt(offsetString) * absoluteOffsetContext.viewportHeight / 100
         : /^-?\d+vw$/.test(offsetString)
           ? parseInt(offsetString) * absoluteOffsetContext.viewportWidth / 100
-          : /^calc\s*\(\s*-?\d+((px)|(vh)|(vw))\s*\+\s*-?\d+((px)|(vh)|(vw))\s*\)\s*$/.test(offsetString)
-            ? parseOffsetCalc(offsetString, absoluteOffsetContext)
-            : parseInt(offsetString) || 0
+          : /^-?\d+cqh$/.test(offsetString)
+            ? parseInt(offsetString) * container.offsetHeight / 100
+              : /^-?\d+cqw$/.test(offsetString)
+                ? parseInt(offsetString) * container.offsetWidth / 100
+                : /^calc\s*\(\s*-?\d+((px)|(vh)|(vw)|(cqh)|(cqw))\s*\+\s*-?\d+((px)|(vh)|(vw)|(cqh)|(cqw))\s*\)\s*$/.test(offsetString)
+                  ? parseOffsetCalc(offsetString, absoluteOffsetContext, container)
+                  : parseInt(offsetString) || 0
     : 0;
 }
 
@@ -159,10 +165,11 @@ function computeStickinessIntoFullRange(offsetTree, absoluteStartOffset, absolut
  * @param {number} viewportSize
  * @param {boolean} isHorizontal
  * @param {AbsoluteOffsetContext} absoluteOffsetContext
+ * @param {HTMLElement} container
  * @param {Array<{element: HTMLElement, offset: number, sticky: {start?: number, end?: number}}>} offsetTree
  * @return {ScrollScene}
  */
-function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal, absoluteOffsetContext, offsetTree) {
+function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal, absoluteOffsetContext, container, offsetTree) {
   const { start, end, duration } = scene;
 
   let startOffset = start;
@@ -188,7 +195,7 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
     if (startRange || start?.name) {
       startRange = startRange || start;
 
-      const startAdd = transformAbsoluteOffsetToNumber(startRange.add, absoluteOffsetContext);
+      const startAdd = transformAbsoluteOffsetToNumber(startRange.add, absoluteOffsetContext, container);
       const absoluteStartOffset = transformRangeToPosition({...startRange, offset: 0}, viewportSize, rect);
       const absoluteEndOffset = transformRangeToPosition({...startRange, offset: 100}, viewportSize, rect);
       // we take 0% to 100% of the named range for start, and we compute the position by adding the sticky addition for the given start offset
@@ -200,7 +207,7 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
     if (endRange || end?.name) {
       endRange = endRange || end;
 
-      const endAdd = transformAbsoluteOffsetToNumber(endRange.add, absoluteOffsetContext);
+      const endAdd = transformAbsoluteOffsetToNumber(endRange.add, absoluteOffsetContext, container);
       const absoluteStartOffset = transformRangeToPosition({...endRange, offset: 0}, viewportSize, rect);
       const absoluteEndOffset = transformRangeToPosition({...endRange, offset: 100}, viewportSize, rect);
       // we take 0% to 100% of the named range for end, and we compute the position by adding the sticky addition for the given end offset
@@ -214,6 +221,16 @@ function transformSceneRangesToOffsets (scene, rect, viewportSize, isHorizontal,
   }
 
   return {...scene, start: startOffset, end: endOffset, startRange, endRange, duration: overrideDuration || duration };
+}
+
+/**
+ * Check whether the position of an element is sticky.
+ *
+ * @param {CSSStyleDeclaration} style
+ * @return {boolean}
+ */
+function getIsContainer (style) {
+  return style.containerType ? style.containerType !== 'normal' : false;
 }
 
 /**
@@ -309,6 +326,8 @@ export function getTransformedScene (scene, root, viewportSize, isHorizontal, ab
   const elementStickiness = isElementSticky ? getStickyData(elementStyle, isHorizontal) : undefined;
 
   let parent = element.offsetParent;
+  let foundContainer = getIsContainer(elementStyle);
+  let container = foundContainer ? element : null;
   let elementLayoutStart = 0;
   let isFixed = elementStyle.position === 'fixed';
   const elementOffset = getRectStart(element, isHorizontal, isElementSticky);
@@ -331,11 +350,16 @@ export function getTransformedScene (scene, root, viewportSize, isHorizontal, ab
     if (parent === root) {
       offsetTree.push({element: parent, offset: 0});
       // if we're at the root don't add its own offset
+      if (!foundContainer) {
+        container = parent;
+        foundContainer = true;
+      }
       break;
     }
 
     const nodeStyle = window.getComputedStyle(parent);
     const isSticky = getIsSticky(nodeStyle);
+    const isContainer = getIsContainer(nodeStyle);
     const sticky = isSticky ? getStickyData(nodeStyle, isHorizontal) : undefined;
 
     // get the base offset of the source element - before adding sticky intervals
@@ -346,10 +370,19 @@ export function getTransformedScene (scene, root, viewportSize, isHorizontal, ab
       elementLayoutStart += offset;
     }
 
+    if (!foundContainer && isContainer) {
+      container = parent
+      foundContainer = true;
+    }
+
     offsetTree.push({element: parent, offset, sticky});
     parent = parent.offsetParent;
 
     if (!parent) {
+      if (!foundContainer) {
+        container = element;
+        foundContainer = true;
+      }
       // only if offsetParent is null do we know that the fixed element is actually fixed to the viewport and we need to set duration to 0
       isFixed = nodeStyle.position === 'fixed';
     }
@@ -363,6 +396,7 @@ export function getTransformedScene (scene, root, viewportSize, isHorizontal, ab
     viewportSize,
     isHorizontal,
     absoluteOffsetContext,
+    container,
     offsetTree
   );
 
