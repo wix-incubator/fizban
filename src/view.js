@@ -361,15 +361,17 @@ export function getTransformedSceneGroup (scenes, root, viewportSize, isHorizont
 
   offsetTree.reverse();
 
-  const transformedScenes = scenes.map(scene => transformSceneRangesToOffsets(
-    scene,
-    {start: elementLayoutStart, end: elementLayoutStart + size},
-    viewportSize,
-    isHorizontal,
-    absoluteOffsetContext,
-    offsetTree
-  ));
-  transformedScenes.forEach(scene => {scene.isFixed = isFixed;})
+  const transformedScenes = scenes.map(scene => ({
+    ...transformSceneRangesToOffsets(
+      scene,
+      {start: elementLayoutStart, end: elementLayoutStart + size},
+      viewportSize,
+      isHorizontal,
+      absoluteOffsetContext,
+      offsetTree
+    ),
+    isFixed
+  }));
 
   return transformedScenes;
 }
