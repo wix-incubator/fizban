@@ -91,7 +91,7 @@ function debounce (fn, interval) {
  * @param {AbsoluteOffsetContext} absoluteOffsetContext
  */
 function parseOffsetCalc(offsetString, absoluteOffsetContext) {
-  const match = offsetString.match(/^calc\s*\(\s*(-?\d+((px)|(vh)|(vw)))\s*\+\s*(-?\d+((px)|(vh)|(vw)))\s*\)\s*$/);
+  const match = offsetString.match(/^calc\s*\(\s*(-?\d+((px)|(l?vh)|(vw)))\s*\+\s*(-?\d+((px)|(l?vh)|(vw)))\s*\)\s*$/);
   return transformAbsoluteOffsetToNumber(match[1], absoluteOffsetContext) + transformAbsoluteOffsetToNumber(match[6], absoluteOffsetContext);
 }
 
@@ -106,11 +106,11 @@ function transformAbsoluteOffsetToNumber (offsetString, absoluteOffsetContext) {
   return offsetString
     ? /^-?\d+px$/.test(offsetString)
       ? parseInt(offsetString)
-      : /^-?\d+vh$/.test(offsetString)
+      : /^-?\d+[lsd]?vh$/.test(offsetString)
         ? parseInt(offsetString) * absoluteOffsetContext.viewportHeight / 100
-        : /^-?\d+vw$/.test(offsetString)
+        : /^-?\d+[lsd]?vw$/.test(offsetString)
           ? parseInt(offsetString) * absoluteOffsetContext.viewportWidth / 100
-          : /^calc\s*\(\s*-?\d+((px)|(vh)|(vw))\s*\+\s*-?\d+((px)|(vh)|(vw))\s*\)\s*$/.test(offsetString)
+          : /^calc\s*\(\s*-?\d+((px)|([lsd]?vh)|([lsd]?vw))\s*\+\s*-?\d+((px)|([lsd]?vh)|([lsd]?vw))\s*\)\s*$/.test(offsetString)
             ? parseOffsetCalc(offsetString, absoluteOffsetContext)
             : parseInt(offsetString) || 0
     : 0;
