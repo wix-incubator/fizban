@@ -231,6 +231,17 @@ function getIsSticky (style) {
 }
 
 /**
+ * Check whether the position of an element is sticky.
+ *
+ * @param {HTMLElement} offsetParent
+ * @param {CSSStyleDeclaration} style
+ * @return {boolean}
+ */
+function getIsFixed (offsetParent, style) {
+  return style.position === 'fixed' && (!offsetParent || offsetParent === window.document.body);
+}
+
+/**
  * Get start offset of an element in scroll direction.
  *
  * @param {CSSStyleDeclaration} style
@@ -308,36 +319,12 @@ function getStickyData (style, isHorizontal) {
  */
 export function getTransformedSceneGroup (scenes, root, viewportSize, isHorizontal, absoluteOffsetContext) {
   const element = scenes[0].viewSource;
-  const elementStyle = window.getComputedStyle(element);
-  const isElementSticky = getIsSticky(elementStyle);
-  const elementStickiness = isElementSticky ? getStickyData(elementStyle, isHorizontal) : undefined;
-
-  let parent = element.offsetParent;
+  const offsetTree = [];
+  let size = (isHorizontal ? element.offsetWidth : element.offsetHeight) || 0;
   let elementLayoutStart = 0;
-  let isFixed = elementStyle.position === 'fixed';
-  const elementOffset = getRectStart(element, isHorizontal, isElementSticky);
-
-  // if we have sticky end (bottom or right) ignore offset for this element because it will stick to its parent's start edge
-  if (!elementStickiness || !('end' in elementStickiness)) {
-    elementLayoutStart += elementOffset;
-  }
-
-  const size = (isHorizontal ? element.offsetWidth : element.offsetHeight) || 0;
-  const offsetTree = [{
-    element,
-    offset: elementOffset,
-    size,
-    sticky: elementStickiness,
-    style: isElementSticky ? elementStyle : null
-  }];
+  let parent = element;
 
   while (parent) {
-    if (parent === root) {
-      offsetTree.push({element: parent, offset: 0});
-      // if we're at the root don't add its own offset
-      break;
-    }
-
     const nodeStyle = window.getComputedStyle(parent);
     const isSticky = getIsSticky(nodeStyle);
     const sticky = isSticky ? getStickyData(nodeStyle, isHorizontal) : undefined;
@@ -351,11 +338,15 @@ export function getTransformedSceneGroup (scenes, root, viewportSize, isHorizont
     }
 
     offsetTree.push({element: parent, offset, sticky});
-    parent = parent.offsetParent;
 
-    if (!parent) {
-      // only if offsetParent is null do we know that the fixed element is actually fixed to the viewport and we need to set duration to 0
-      isFixed = nodeStyle.position === 'fixed';
+    parent = parent.offsetParent;
+    const isFixed = getIsFixed(parent, nodeStyle);
+    if (isFixed) {
+      size += window.document.body.scrollHeight - viewportSize;
+      break;
+    } else if (parent === root) {
+      offsetTree.push({element: parent, offset: 0});
+      break;
     }
   }
 
@@ -370,7 +361,6 @@ export function getTransformedSceneGroup (scenes, root, viewportSize, isHorizont
       absoluteOffsetContext,
       offsetTree
     ),
-    isFixed
   }));
 
   return transformedScenes;
