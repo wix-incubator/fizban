@@ -320,12 +320,13 @@ function getIsSticky (style) {
 /**
  * Check whether the position of an element is sticky.
  *
- * @param {HTMLElement} offsetParent
  * @param {CSSStyleDeclaration} style
+ * @param {HTMLElement} offsetParent
+ * @param {HTMLElement} root
  * @return {boolean}
  */
-function getIsFixed (offsetParent, style) {
-  return style.position === 'fixed' && (!offsetParent || offsetParent === window.document.body);
+function getIsFixed (style, offsetParent, root) {
+  return style.position === 'fixed' && (!offsetParent || offsetParent === window.document.body || offsetParent === root);
 }
 
 /**
@@ -427,9 +428,9 @@ function getTransformedSceneGroup (scenes, root, viewportSize, isHorizontal, abs
     offsetTree.push({element: parent, offset, sticky});
 
     parent = parent.offsetParent;
-    const isFixed = getIsFixed(parent, nodeStyle);
+    const isFixed = getIsFixed(nodeStyle, parent, root);
     if (isFixed) {
-      size += window.document.body.scrollHeight - viewportSize;
+      // size += (parent || window.document.body).scrollHeight - viewportSize;
       break;
     } else if (parent === root) {
       offsetTree.push({element: parent, offset: 0});
