@@ -343,7 +343,6 @@ export function getTransformedSceneGroup (scenes, root, viewportSize, isHorizont
     parent = parent.offsetParent;
     const isFixed = getIsFixed(nodeStyle, parent, root);
     if (isFixed) {
-      // size += (parent || window.document.body).scrollHeight - viewportSize;
       break;
     } else if (parent === root) {
       offsetTree.push({element: parent, offset: 0});
