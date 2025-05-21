@@ -570,7 +570,7 @@ function getController (config) {
         }
         if (scene.duration == null) {
           scene.duration = scene.end - scene.start;
-        }    
+        }
       });
     }
 
