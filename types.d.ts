@@ -7,8 +7,16 @@ declare type RangeOffset = {
 
 declare type scrollConfig = {
   scenes: ScrollScene[];
+  horizontal?: boolean;
   transitionActive?: boolean;
   transitionFriction?: number;
+  velocityActive?: boolean;
+  velocityMax?: number;
+  observeViewportEntry?: boolean;
+  viewportRootMargin?: string;
+  observeViewportResize?: boolean;
+  observeSourcesResize?: boolean;
+  root?: Element | Window;
 }
 
 declare type ScrollScene = {
