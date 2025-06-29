@@ -464,7 +464,8 @@ const DEFAULTS$1 = {
   observeViewportEntry: true,
   viewportRootMargin: '7% 7%',
   observeViewportResize: false,
-  observeSourcesResize: false
+  observeSourcesResize: false,
+  observeContentResize: false,
 };
 
 /*
@@ -560,7 +561,7 @@ function getController (config) {
   ).flatMap(sceneGroup => {
     if (sceneGroup.every(scene => (scene.viewSource && (typeof scene.duration === 'string' || scene.start?.name)))) {
       sceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
-      if (_config.observeSourcesResize) {
+      if (_config.observeSourcesResize || _config.observeContentResize) {
         rangesToObserve.push(sceneGroup);
       }
     } else {
@@ -655,6 +656,26 @@ function getController (config) {
         scenesArray.push(scene);
       }
     });
+  }
+
+  /*
+   * Observe resize of content root.
+   */
+  if (_config.observeContentResize && _config.contentRoot && window.ResizeObserver) {
+    const contentResizeObserver = new window.ResizeObserver(debounce(() => {
+      const newRanges = rangesToObserve.map(sceneGroup => {
+        const newSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
+        newSceneGroup.forEach((scene, localIndex) => {_config.scenes[scene.index] = newSceneGroup[localIndex];});
+
+        return newSceneGroup;
+      });
+
+      // reset cache
+      rangesToObserve.length = 0;
+      rangesToObserve.push(...newRanges);
+    }, VIEWPORT_RESIZE_INTERVAL));
+
+    contentResizeObserver.observe(_config.contentRoot, {box: 'border-box'});
   }
 
   /**
@@ -768,8 +789,10 @@ class Scroll {
 
     this._lerpFrameId = 0;
     this.effect = null;
+    const isDocumentRoot = (!this.config.root || this.config.root === window.document.body);
     // if no root or root is document.body then use window
-    this.config.root = (!this.config.root || this.config.root === window.document.body) ? window : this.config.root;
+    this.config.root = isDocumentRoot ? window : this.config.root;
+    this.config.contentRoot = this.config.contentRoot || (isDocumentRoot ? window.document.body : this.config.root.firstElementChild);
     this.config.resetProgress = this.config.resetProgress || this.resetProgress.bind(this);
 
     this._measure = this.config.measure || (() => {
@@ -926,7 +949,9 @@ class Scroll {
  * @property {boolean} [viewportRootMargin] `rootMargin` option to be used for viewport observation. Defaults to `'7% 7%'`.
  * @property {boolean} [observeViewportResize] whether to observe resize of the layout viewport. Defaults to `false`.
  * @property {boolean} [observeSourcesResize] whether to observe resize of view-timeline source elements. Defaults to `false`.
+ * @property {boolean} [observeContentResize] whether to observe resize of content root of the scroll container. Defaults to `false`.
  * @property {Element|Window} [root] the scrollable element, defaults to window.
+ * @property {Element} [contentRoot] the root element for the content, defaults to first child of root or body element.
  */
 
 /**
