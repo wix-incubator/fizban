@@ -12,7 +12,8 @@ const DEFAULTS = {
   observeViewportEntry: true,
   viewportRootMargin: '7% 7%',
   observeViewportResize: false,
-  observeSourcesResize: false
+  observeSourcesResize: false,
+  observeContentResize: false,
 };
 
 /*
@@ -108,7 +109,7 @@ export function getController (config) {
   ).flatMap(sceneGroup => {
     if (sceneGroup.every(scene => (scene.viewSource && (typeof scene.duration === 'string' || scene.start?.name)))) {
       sceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
-      if (_config.observeSourcesResize) {
+      if (_config.observeSourcesResize || _config.observeContentResize) {
         rangesToObserve.push(sceneGroup);
       }
     } else {
@@ -203,6 +204,26 @@ export function getController (config) {
         scenesArray.push(scene);
       }
     });
+  }
+
+  /*
+   * Observe resize of content root.
+   */
+  if (_config.observeContentResize && _config.contentRoot && window.ResizeObserver) {
+    const contentResizeObserver = new window.ResizeObserver(debounce(() => {
+      const newRanges = rangesToObserve.map(sceneGroup => {
+        const newSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
+        newSceneGroup.forEach((scene, localIndex) => {_config.scenes[scene.index] = newSceneGroup[localIndex];});
+
+        return newSceneGroup;
+      });
+
+      // reset cache
+      rangesToObserve.length = 0;
+      rangesToObserve.push(...newRanges);
+    }, VIEWPORT_RESIZE_INTERVAL));
+
+    contentResizeObserver.observe(_config.contentRoot, {box: 'border-box'});
   }
 
   /**

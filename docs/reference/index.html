@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset='utf-8'>
-  <title>fizban 0.6.9 | Documentation</title>
+  <title>fizban 0.7.0 | Documentation</title>
   <meta name='description' content='Tiny library for performant scroll-driven effects'>
   <meta name='viewport' content='width=device-width,initial-scale=1'>
   <link href='assets/bass.css' rel='stylesheet'>
@@ -15,7 +15,7 @@
       <div id='split-left' class='overflow-auto fs0 height-viewport-100'>
         <div class='py1 px2'>
           <h3 class='mb0 no-anchor'>fizban</h3>
-          <div class='mb1'><code>0.6.9</code></div>
+          <div class='mb1'><code>0.7.0</code></div>
           <input
             placeholder='Filter'
             id='filter-input'
@@ -1126,8 +1126,24 @@ scroll.<span class="hljs-title function_">start</span>();</pre>
         </div>
       
         <div class='space-bottom0'>
+          <span class='code bold'>observeContentResize</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</code>
+          : whether to observe resize of content root of the scroll container. Defaults to 
+<code>false</code>
+.
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
           <span class='code bold'>root</span> <code class='quiet'>((<a href="https://developer.mozilla.org/docs/Web/API/Element">Element</a> | <a href="https://developer.mozilla.org/docs/Web/API/Window">Window</a>)?)</code>
           : the scrollable element, defaults to window.
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>contentRoot</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/API/Element">Element</a>?)</code>
+          : the root element for the content, defaults to first child of root or body element.
 
           
         </div>
