@@ -128,9 +128,12 @@ export function getController (config) {
   _config.scenes.forEach((scene, index) => {scene.index = index;});
 
   if (rangesToObserve.length) {
-    if (window.ResizeObserver) {
-      const targetToSceneGroup = new Map();
+    const targetToSceneGroup = new Map();
 
+    if (window.ResizeObserver) {
+      /*
+       * Observe resize of view-timeline subjects.
+       */
       rangesResizeObserver = new window.ResizeObserver(function (entries) {
         entries.forEach(entry => {
           const sceneGroup = targetToSceneGroup.get(entry.target);
@@ -146,6 +149,29 @@ export function getController (config) {
         rangesResizeObserver.observe(sceneGroup[0].viewSource, {box: 'border-box'});
         targetToSceneGroup.set(sceneGroup[0].viewSource, sceneGroup);
       });
+
+      /*
+       * Observe resize of content root.
+       */
+      if (_config.observeContentResize && _config.contentRoot) {
+        const contentResizeObserver = new window.ResizeObserver(debounce(() => {
+          const newRanges = rangesToObserve.map(sceneGroup => {
+            const newSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
+            newSceneGroup.forEach((scene, localIndex) => {_config.scenes[scene.index] = newSceneGroup[localIndex];});
+
+            return newSceneGroup;
+          });
+
+          // reset cache
+          rangesToObserve.length = 0;
+          rangesToObserve.push(...newRanges);
+          rangesToObserve.forEach(sceneGroup => {
+            targetToSceneGroup.set(sceneGroup[0].viewSource, sceneGroup);
+          });
+        }, VIEWPORT_RESIZE_INTERVAL));
+
+        contentResizeObserver.observe(_config.contentRoot, {box: 'border-box'});
+      }
     }
 
     if (_config.observeViewportResize) {
@@ -162,6 +188,9 @@ export function getController (config) {
         // reset cache
         rangesToObserve.length = 0;
         rangesToObserve.push(...newRanges);
+        rangesToObserve.forEach(sceneGroup => {
+          targetToSceneGroup.set(sceneGroup[0].viewSource, sceneGroup);
+        });
       }, VIEWPORT_RESIZE_INTERVAL);
 
       if (root === window) {
@@ -204,26 +233,6 @@ export function getController (config) {
         scenesArray.push(scene);
       }
     });
-  }
-
-  /*
-   * Observe resize of content root.
-   */
-  if (_config.observeContentResize && _config.contentRoot && window.ResizeObserver) {
-    const contentResizeObserver = new window.ResizeObserver(debounce(() => {
-      const newRanges = rangesToObserve.map(sceneGroup => {
-        const newSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
-        newSceneGroup.forEach((scene, localIndex) => {_config.scenes[scene.index] = newSceneGroup[localIndex];});
-
-        return newSceneGroup;
-      });
-
-      // reset cache
-      rangesToObserve.length = 0;
-      rangesToObserve.push(...newRanges);
-    }, VIEWPORT_RESIZE_INTERVAL));
-
-    contentResizeObserver.observe(_config.contentRoot, {box: 'border-box'});
   }
 
   /**
