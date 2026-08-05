@@ -1,4 +1,5 @@
 import { getController } from './controller.js';
+import { getOwnerWindow } from './dom.js';
 import { defaultTo, frameThrottle, lerp } from './utilities.js';
 
 /**
@@ -41,10 +42,11 @@ export class Scroll {
 
     this._lerpFrameId = 0;
     this.effect = null;
-    const isDocumentRoot = (!this.config.root || this.config.root === window.document.body);
+    this.window = getOwnerWindow(this.config.root);
+    const isDocumentRoot = (!this.config.root || this.config.root === this.window.document.body);
     // if no root or root is document.body then use window
-    this.config.root = isDocumentRoot ? window : this.config.root;
-    this.config.contentRoot = this.config.contentRoot || (isDocumentRoot ? window.document.body : this.config.root.firstElementChild);
+    this.config.root = isDocumentRoot ? this.window : this.config.root;
+    this.config.contentRoot = this.config.contentRoot || (isDocumentRoot ? this.window.document.body : this.config.root.firstElementChild);
     this.config.resetProgress = this.config.resetProgress || this.resetProgress.bind(this);
 
     this._measure = this.config.measure || (() => {
@@ -58,7 +60,7 @@ export class Scroll {
     this._trigger = frameThrottle(() => {
       this._measure?.();
       this.tick(true);
-    });
+    }, this.window);
   }
 
   /**
@@ -133,10 +135,13 @@ export class Scroll {
 
     if (hasLerp && (progress.p !== this.progress.p)) {
       if (clearLerpFrame && this._lerpFrameId) {
-        window.cancelAnimationFrame(this._lerpFrameId);
+        this.window.cancelAnimationFrame(this._lerpFrameId);
       }
 
-      this._lerpFrameId = window.requestAnimationFrame(() => this.tick());
+      this._lerpFrameId = this.window.requestAnimationFrame(() => {
+        this._lerpFrameId = 0;
+        this.tick();
+      });
     }
 
     progress.prevP = progress.p;
@@ -154,6 +159,11 @@ export class Scroll {
    */
   destroy () {
     this.pause();
+    this._trigger.cancel();
+    if (this._lerpFrameId) {
+      this.window.cancelAnimationFrame(this._lerpFrameId);
+      this._lerpFrameId = 0;
+    }
     this.removeEffect();
   }
 

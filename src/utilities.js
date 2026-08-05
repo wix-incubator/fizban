@@ -44,21 +44,34 @@ function lerp (a, b, t, e) {
  * Keeps the arguments from last call, even if that call gets ignored.
  *
  * @param {function} fn function to throttle
+ * @param {Window} ownerWindow window used to schedule the frame
  * @return {(function(): void)}
  */
-function frameThrottle (fn) {
+function frameThrottle (fn, ownerWindow = window) {
   let throttled = false;
+  let frameId = 0;
 
-  return function () {
+  function trigger () {
     if (!throttled) {
       throttled = true;
 
-      window.requestAnimationFrame(() => {
+      frameId = ownerWindow.requestAnimationFrame(() => {
         throttled = false;
+        frameId = 0;
         fn();
       });
     }
+  }
+
+  trigger.cancel = () => {
+    if (frameId) {
+      ownerWindow.cancelAnimationFrame(frameId);
+      frameId = 0;
+      throttled = false;
+    }
   };
+
+  return trigger;
 }
 
 /**
@@ -66,21 +79,31 @@ function frameThrottle (fn) {
  *
  * @param {function} fn
  * @param {number} interval
+ * @param {Window} ownerWindow window used to schedule the timeout
  * @return {function}
  */
-function debounce (fn, interval) {
+function debounce (fn, interval, ownerWindow = window) {
   let debounced = 0;
 
-  return function bounce () {
+  function bounce () {
     if (debounced) {
-      window.clearTimeout(debounced);
+      ownerWindow.clearTimeout(debounced);
     }
 
-    debounced = window.setTimeout(() => {
+    debounced = ownerWindow.setTimeout(() => {
       debounced = 0;
       fn();
     }, interval);
+  }
+
+  bounce.cancel = () => {
+    if (debounced) {
+      ownerWindow.clearTimeout(debounced);
+      debounced = 0;
+    }
   };
+
+  return bounce;
 }
 
 export {

@@ -1,3 +1,5 @@
+import { getOwnerWindow } from './dom.js';
+
 /**
  * parses offsetString of the format calc(<length> + <length>)
  * @param {string|undefined} offsetString
@@ -238,8 +240,8 @@ function getIsSticky (style) {
  * @param {HTMLElement} root
  * @return {boolean}
  */
-function getIsFixed (style, offsetParent, root) {
-  return style.position === 'fixed' && (!offsetParent || offsetParent === window.document.body || offsetParent === root);
+function getIsFixed (style, offsetParent, root, ownerWindow) {
+  return style.position === 'fixed' && (!offsetParent || offsetParent === ownerWindow.document.body || offsetParent === root);
 }
 
 /**
@@ -320,13 +322,14 @@ function getStickyData (style, isHorizontal) {
  */
 export function getTransformedSceneGroup (scenes, root, viewportSize, isHorizontal, absoluteOffsetContext) {
   const element = scenes[0].viewSource;
+  const ownerWindow = getOwnerWindow(root || element);
   const offsetTree = [];
   let size = (isHorizontal ? element.offsetWidth : element.offsetHeight) || 0;
   let elementLayoutStart = 0;
   let parent = element;
 
   while (parent) {
-    const nodeStyle = window.getComputedStyle(parent);
+    const nodeStyle = ownerWindow.getComputedStyle(parent);
     const isSticky = getIsSticky(nodeStyle);
     const sticky = isSticky ? getStickyData(nodeStyle, isHorizontal) : undefined;
 
@@ -341,7 +344,7 @@ export function getTransformedSceneGroup (scenes, root, viewportSize, isHorizont
     offsetTree.push({element: parent, offset, sticky});
 
     parent = parent.offsetParent;
-    const isFixed = getIsFixed(nodeStyle, parent, root);
+    const isFixed = getIsFixed(nodeStyle, parent, root, ownerWindow);
     if (isFixed) {
       break;
     } else if (parent === root) {
@@ -379,4 +382,3 @@ export function getTransformedSceneGroup (scenes, root, viewportSize, isHorizont
 export function getTransformedScene (scene, root, viewportSize, isHorizontal, absoluteOffsetContext) {
   return getTransformedSceneGroup([scene], root, viewportSize, isHorizontal, absoluteOffsetContext)[0];
 }
-

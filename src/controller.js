@@ -1,4 +1,5 @@
 import { debounce, defaultTo } from './utilities.js';
+import { getOwnerWindow, isWindow } from './dom.js';
 import { getTransformedSceneGroup } from './view.js';
 
 const VIEWPORT_RESIZE_INTERVAL = 100;
@@ -48,23 +49,24 @@ function calcProgress (p, start, end, duration) {
  *
  * @param {Window|HTMLElement} root
  * @param {boolean} isHorizontal
+ * @param {Window} ownerWindow
  * @return {number}
  */
-function getViewportSize (root, isHorizontal) {
-  if (root === window) {
+function getViewportSize (root, isHorizontal, ownerWindow) {
+  if (isWindow(root)) {
     return isHorizontal
-        ? window.document.documentElement.clientWidth
-        : window.document.documentElement.clientHeight;
+        ? ownerWindow.document.documentElement.clientWidth
+        : ownerWindow.document.documentElement.clientHeight;
   }
 
   return isHorizontal ? root.clientWidth : root.clientHeight;
 }
 
-function getAbsoluteOffsetContext () {
+function getAbsoluteOffsetContext (ownerWindow) {
   // TODO: re-calc on viewport resize
   return {
-    viewportWidth: window.document.documentElement.clientWidth,
-    viewportHeight: window.document.documentElement.clientHeight
+    viewportWidth: ownerWindow.document.documentElement.clientWidth,
+    viewportHeight: ownerWindow.document.documentElement.clientHeight
   };
 }
 
@@ -82,14 +84,15 @@ function getAbsoluteOffsetContext () {
 export function getController (config) {
   const _config = defaultTo(config, DEFAULTS);
   const root = _config.root;
+  const ownerWindow = getOwnerWindow(root);
   const horizontal = _config.horizontal;
   const scenesByElement = new WeakMap();
-  let viewportSize = getViewportSize(root, horizontal);
+  let viewportSize = getViewportSize(root, horizontal, ownerWindow);
 
   let lastP;
-  let viewportObserver, rangesResizeObserver, viewportResizeHandler, scrollportResizeObserver;
+  let viewportObserver, rangesResizeObserver, contentResizeObserver, contentResizeHandler, viewportResizeHandler, scrollportResizeObserver;
   const rangesToObserve = [];
-  const absoluteOffsetContext = getAbsoluteOffsetContext()
+  const absoluteOffsetContext = getAbsoluteOffsetContext(ownerWindow)
 
   /*
    * Prepare scenes data.
@@ -130,11 +133,11 @@ export function getController (config) {
   if (rangesToObserve.length) {
     const targetToSceneGroup = new Map();
 
-    if (window.ResizeObserver) {
+    if (ownerWindow.ResizeObserver) {
       /*
        * Observe resize of view-timeline subjects.
        */
-      rangesResizeObserver = new window.ResizeObserver(function (entries) {
+      rangesResizeObserver = new ownerWindow.ResizeObserver(function (entries) {
         entries.forEach(entry => {
           const sceneGroup = targetToSceneGroup.get(entry.target);
           // TODO: try to optimize by using `const {blockSize, inlineSize} = entry.borderBoxSize[0]`
@@ -154,7 +157,7 @@ export function getController (config) {
        * Observe resize of content root.
        */
       if (_config.observeContentResize && _config.contentRoot) {
-        const contentResizeObserver = new window.ResizeObserver(debounce(() => {
+        contentResizeHandler = debounce(() => {
           const newRanges = rangesToObserve.map(sceneGroup => {
             const newSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
             newSceneGroup.forEach((scene, localIndex) => {_config.scenes[scene.index] = newSceneGroup[localIndex];});
@@ -168,7 +171,8 @@ export function getController (config) {
           rangesToObserve.forEach(sceneGroup => {
             targetToSceneGroup.set(sceneGroup[0].viewSource, sceneGroup);
           });
-        }, VIEWPORT_RESIZE_INTERVAL));
+        }, VIEWPORT_RESIZE_INTERVAL, ownerWindow);
+        contentResizeObserver = new ownerWindow.ResizeObserver(contentResizeHandler);
 
         contentResizeObserver.observe(_config.contentRoot, {box: 'border-box'});
       }
@@ -176,7 +180,7 @@ export function getController (config) {
 
     if (_config.observeViewportResize) {
       viewportResizeHandler = debounce(function () {
-        viewportSize = getViewportSize(root, horizontal);
+        viewportSize = getViewportSize(root, horizontal, ownerWindow);
 
         const newRanges = rangesToObserve.map(sceneGroup => {
           const newSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
@@ -191,13 +195,13 @@ export function getController (config) {
         rangesToObserve.forEach(sceneGroup => {
           targetToSceneGroup.set(sceneGroup[0].viewSource, sceneGroup);
         });
-      }, VIEWPORT_RESIZE_INTERVAL);
+      }, VIEWPORT_RESIZE_INTERVAL, ownerWindow);
 
-      if (root === window) {
-        window.addEventListener('resize', viewportResizeHandler);
+      if (isWindow(root)) {
+        ownerWindow.addEventListener('resize', viewportResizeHandler);
       }
-      else if (window.ResizeObserver) {
-        scrollportResizeObserver = new window.ResizeObserver(viewportResizeHandler);
+      else if (ownerWindow.ResizeObserver) {
+        scrollportResizeObserver = new ownerWindow.ResizeObserver(viewportResizeHandler);
         scrollportResizeObserver.observe(root, {box: 'border-box'});
       }
     }
@@ -206,15 +210,15 @@ export function getController (config) {
   /*
    * Observe entry and exit of scenes into view
    */
-  if (_config.observeViewportEntry && window.IntersectionObserver) {
-    viewportObserver = new window.IntersectionObserver(function (intersections) {
+  if (_config.observeViewportEntry && ownerWindow.IntersectionObserver) {
+    viewportObserver = new ownerWindow.IntersectionObserver(function (intersections) {
       intersections.forEach(intersection => {
         (scenesByElement.get(intersection.target) || []).forEach(scene => {
           scene.disabled = !intersection.isIntersecting;
         });
       });
     }, {
-      root: root === window ? window.document : root,
+      root: isWindow(root) ? ownerWindow.document : root,
       rootMargin: _config.viewportRootMargin,
       threshold: 0
     });
@@ -286,14 +290,21 @@ export function getController (config) {
       rangesResizeObserver = null;
     }
 
+    if (contentResizeObserver) {
+      contentResizeObserver.disconnect();
+      contentResizeObserver = null;
+    }
+    contentResizeHandler?.cancel();
+
     if (viewportResizeHandler) {
       if (scrollportResizeObserver) {
         scrollportResizeObserver.disconnect();
         scrollportResizeObserver = null;
       }
       else {
-        window.removeEventListener('resize', viewportResizeHandler);
+        ownerWindow.removeEventListener('resize', viewportResizeHandler);
       }
+      viewportResizeHandler.cancel();
     }
   }
 
