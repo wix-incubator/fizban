@@ -49,29 +49,17 @@ function lerp (a, b, t, e) {
  */
 function frameThrottle (fn, ownerWindow = window) {
   let throttled = false;
-  let frameId = null;
 
-  function trigger () {
+  return function () {
     if (!throttled) {
       throttled = true;
 
-      frameId = ownerWindow.requestAnimationFrame(() => {
+      ownerWindow.requestAnimationFrame(() => {
         throttled = false;
-        frameId = null;
         fn();
       });
     }
-  }
-
-  trigger.cancel = () => {
-    if (frameId !== null) {
-      ownerWindow.cancelAnimationFrame(frameId);
-      frameId = null;
-      throttled = false;
-    }
   };
-
-  return trigger;
 }
 
 /**
@@ -83,27 +71,18 @@ function frameThrottle (fn, ownerWindow = window) {
  * @return {function}
  */
 function debounce (fn, interval, ownerWindow = window) {
-  let debounced = null;
+  let debounced = 0;
 
-  function bounce () {
-    if (debounced !== null) {
+  return function bounce () {
+    if (debounced) {
       ownerWindow.clearTimeout(debounced);
     }
 
     debounced = ownerWindow.setTimeout(() => {
-      debounced = null;
+      debounced = 0;
       fn();
     }, interval);
-  }
-
-  bounce.cancel = () => {
-    if (debounced !== null) {
-      ownerWindow.clearTimeout(debounced);
-      debounced = null;
-    }
   };
-
-  return bounce;
 }
 
 export {

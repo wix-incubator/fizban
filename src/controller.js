@@ -90,7 +90,7 @@ export function getController (config) {
   let viewportSize = getViewportSize(root, horizontal, ownerWindow);
 
   let lastP;
-  let viewportObserver, rangesResizeObserver, contentResizeObserver, contentResizeHandler, viewportResizeHandler, scrollportResizeObserver;
+  let viewportObserver, rangesResizeObserver, viewportResizeHandler, scrollportResizeObserver;
   const rangesToObserve = [];
   const absoluteOffsetContext = getAbsoluteOffsetContext(ownerWindow)
 
@@ -157,7 +157,7 @@ export function getController (config) {
        * Observe resize of content root.
        */
       if (_config.observeContentResize && _config.contentRoot) {
-        contentResizeHandler = debounce(() => {
+        const contentResizeObserver = new ownerWindow.ResizeObserver(debounce(() => {
           const newRanges = rangesToObserve.map(sceneGroup => {
             const newSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
             newSceneGroup.forEach((scene, localIndex) => {_config.scenes[scene.index] = newSceneGroup[localIndex];});
@@ -171,8 +171,7 @@ export function getController (config) {
           rangesToObserve.forEach(sceneGroup => {
             targetToSceneGroup.set(sceneGroup[0].viewSource, sceneGroup);
           });
-        }, VIEWPORT_RESIZE_INTERVAL, ownerWindow);
-        contentResizeObserver = new ownerWindow.ResizeObserver(contentResizeHandler);
+        }, VIEWPORT_RESIZE_INTERVAL, ownerWindow));
 
         contentResizeObserver.observe(_config.contentRoot, {box: 'border-box'});
       }
@@ -290,12 +289,6 @@ export function getController (config) {
       rangesResizeObserver = null;
     }
 
-    if (contentResizeObserver) {
-      contentResizeObserver.disconnect();
-      contentResizeObserver = null;
-    }
-    contentResizeHandler?.cancel();
-
     if (viewportResizeHandler) {
       if (scrollportResizeObserver) {
         scrollportResizeObserver.disconnect();
@@ -304,7 +297,6 @@ export function getController (config) {
       else {
         ownerWindow.removeEventListener('resize', viewportResizeHandler);
       }
-      viewportResizeHandler.cancel();
     }
   }
 

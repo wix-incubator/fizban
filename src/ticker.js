@@ -1,48 +1,38 @@
-import { getOwnerWindow } from './dom.js';
-
-function getInstanceWindow (instance) {
-  return instance.window || getOwnerWindow(instance.config?.root);
-}
-
 /**
  * @typedef {ticker}
  * @property {Set} pool
- * @property {Map<Window, number>} animationFrames
+ * @property {number} animationFrame
  */
 export const ticker = {
   pool: new Set(),
-  animationFrames: new Map(),
   /**
    * Starts the animation loop.
    */
-  start (ownerWindow = getOwnerWindow()) {
-    if ( ! ticker.animationFrames.has(ownerWindow) ) {
+  start () {
+    if ( ! ticker.animationFrame ) {
       const loop = () => {
-        ticker.animationFrames.set(ownerWindow, ownerWindow.requestAnimationFrame(loop));
-        ticker.tick(ownerWindow);
+        ticker.animationFrame = window.requestAnimationFrame(loop);
+        ticker.tick();
       };
 
-      ticker.animationFrames.set(ownerWindow, ownerWindow.requestAnimationFrame(loop));
+      ticker.animationFrame = window.requestAnimationFrame(loop);
     }
   },
 
   /**
    * Stops the animation loop.
    */
-  stop (ownerWindow = getOwnerWindow()) {
-    ownerWindow.cancelAnimationFrame(ticker.animationFrames.get(ownerWindow));
-    ticker.animationFrames.delete(ownerWindow);
+  stop () {
+    window.cancelAnimationFrame(ticker.animationFrame);
+    ticker.animationFrame = null;
   },
 
   /**
    * Invoke `.tick()` on all instances in the pool.
    */
-  tick (ownerWindow) {
+  tick () {
     for (let instance of ticker.pool) {
-      const instanceWindow = getInstanceWindow(instance);
-      if (!ownerWindow || instanceWindow === ownerWindow) {
-        instance.tick();
-      }
+      instance.tick();
     }
   },
 
@@ -54,9 +44,10 @@ export const ticker = {
   add (instance) {
     ticker.pool.add(instance);
     instance.ticking = true;
-    const ownerWindow = getInstanceWindow(instance);
 
-    ticker.start(ownerWindow);
+    if ( ticker.pool.size ) {
+      ticker.start();
+    }
   },
 
   /**
@@ -65,15 +56,12 @@ export const ticker = {
    * @param {Scroll} instance
    */
   remove (instance) {
-    const ownerWindow = getInstanceWindow(instance);
-
     if ( ticker.pool.delete(instance) ) {
       instance.ticking = false;
     }
 
-    const hasWindowInstances = [...ticker.pool].some(item => getInstanceWindow(item) === ownerWindow);
-    if ( ! hasWindowInstances ) {
-      ticker.stop(ownerWindow);
+    if ( ! ticker.pool.size ) {
+      ticker.stop();
     }
   }
 };

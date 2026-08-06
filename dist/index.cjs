@@ -51,29 +51,17 @@ function lerp (a, b, t, e) {
  */
 function frameThrottle (fn, ownerWindow = window) {
   let throttled = false;
-  let frameId = null;
 
-  function trigger () {
+  return function () {
     if (!throttled) {
       throttled = true;
 
-      frameId = ownerWindow.requestAnimationFrame(() => {
+      ownerWindow.requestAnimationFrame(() => {
         throttled = false;
-        frameId = null;
         fn();
       });
     }
-  }
-
-  trigger.cancel = () => {
-    if (frameId !== null) {
-      ownerWindow.cancelAnimationFrame(frameId);
-      frameId = null;
-      throttled = false;
-    }
   };
-
-  return trigger;
 }
 
 /**
@@ -85,27 +73,18 @@ function frameThrottle (fn, ownerWindow = window) {
  * @return {function}
  */
 function debounce (fn, interval, ownerWindow = window) {
-  let debounced = null;
+  let debounced = 0;
 
-  function bounce () {
-    if (debounced !== null) {
+  return function bounce () {
+    if (debounced) {
       ownerWindow.clearTimeout(debounced);
     }
 
     debounced = ownerWindow.setTimeout(() => {
-      debounced = null;
+      debounced = 0;
       fn();
     }, interval);
-  }
-
-  bounce.cancel = () => {
-    if (debounced !== null) {
-      ownerWindow.clearTimeout(debounced);
-      debounced = null;
-    }
   };
-
-  return bounce;
 }
 
 /**
@@ -598,7 +577,7 @@ function getController (config) {
   let viewportSize = getViewportSize(root, horizontal, ownerWindow);
 
   let lastP;
-  let viewportObserver, rangesResizeObserver, contentResizeObserver, contentResizeHandler, viewportResizeHandler, scrollportResizeObserver;
+  let viewportObserver, rangesResizeObserver, viewportResizeHandler, scrollportResizeObserver;
   const rangesToObserve = [];
   const absoluteOffsetContext = getAbsoluteOffsetContext(ownerWindow);
 
@@ -665,7 +644,7 @@ function getController (config) {
        * Observe resize of content root.
        */
       if (_config.observeContentResize && _config.contentRoot) {
-        contentResizeHandler = debounce(() => {
+        const contentResizeObserver = new ownerWindow.ResizeObserver(debounce(() => {
           const newRanges = rangesToObserve.map(sceneGroup => {
             const newSceneGroup = getTransformedSceneGroup(sceneGroup, root, viewportSize, horizontal, absoluteOffsetContext);
             newSceneGroup.forEach((scene, localIndex) => {_config.scenes[scene.index] = newSceneGroup[localIndex];});
@@ -679,8 +658,7 @@ function getController (config) {
           rangesToObserve.forEach(sceneGroup => {
             targetToSceneGroup.set(sceneGroup[0].viewSource, sceneGroup);
           });
-        }, VIEWPORT_RESIZE_INTERVAL, ownerWindow);
-        contentResizeObserver = new ownerWindow.ResizeObserver(contentResizeHandler);
+        }, VIEWPORT_RESIZE_INTERVAL, ownerWindow));
 
         contentResizeObserver.observe(_config.contentRoot, {box: 'border-box'});
       }
@@ -798,12 +776,6 @@ function getController (config) {
       rangesResizeObserver = null;
     }
 
-    if (contentResizeObserver) {
-      contentResizeObserver.disconnect();
-      contentResizeObserver = null;
-    }
-    contentResizeHandler?.cancel();
-
     if (viewportResizeHandler) {
       if (scrollportResizeObserver) {
         scrollportResizeObserver.disconnect();
@@ -812,7 +784,6 @@ function getController (config) {
       else {
         ownerWindow.removeEventListener('resize', viewportResizeHandler);
       }
-      viewportResizeHandler.cancel();
     }
   }
 
@@ -863,13 +834,13 @@ class Scroll {
       vp: 0
     };
 
-    this._lerpFrameId = null;
+    this._lerpFrameId = 0;
     this.effect = null;
-    this.window = getOwnerWindow(this.config.root);
-    const isDocumentRoot = (!this.config.root || this.config.root === this.window.document.body);
+    this._window = getOwnerWindow(this.config.root);
+    const isDocumentRoot = (!this.config.root || this.config.root === this._window.document.body);
     // if no root or root is document.body then use window
-    this.config.root = isDocumentRoot ? this.window : this.config.root;
-    this.config.contentRoot = this.config.contentRoot || (isDocumentRoot ? this.window.document.body : this.config.root.firstElementChild);
+    this.config.root = isDocumentRoot ? this._window : this.config.root;
+    this.config.contentRoot = this.config.contentRoot || (isDocumentRoot ? this._window.document.body : this.config.root.firstElementChild);
     this.config.resetProgress = this.config.resetProgress || this.resetProgress.bind(this);
 
     this._measure = this.config.measure || (() => {
@@ -883,7 +854,7 @@ class Scroll {
     this._trigger = frameThrottle(() => {
       this._measure?.();
       this.tick(true);
-    }, this.window);
+    }, this._window);
   }
 
   /**
@@ -957,14 +928,11 @@ class Scroll {
     this.effect.tick(progress);
 
     if (hasLerp && (progress.p !== this.progress.p)) {
-      if (clearLerpFrame && this._lerpFrameId !== null) {
-        this.window.cancelAnimationFrame(this._lerpFrameId);
+      if (clearLerpFrame && this._lerpFrameId) {
+        this._window.cancelAnimationFrame(this._lerpFrameId);
       }
 
-      this._lerpFrameId = this.window.requestAnimationFrame(() => {
-        this._lerpFrameId = null;
-        this.tick();
-      });
+      this._lerpFrameId = this._window.requestAnimationFrame(() => this.tick());
     }
 
     progress.prevP = progress.p;
@@ -982,11 +950,6 @@ class Scroll {
    */
   destroy () {
     this.pause();
-    this._trigger.cancel();
-    if (this._lerpFrameId !== null) {
-      this.window.cancelAnimationFrame(this._lerpFrameId);
-      this._lerpFrameId = null;
-    }
     this.removeEffect();
   }
 

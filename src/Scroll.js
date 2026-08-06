@@ -40,13 +40,13 @@ export class Scroll {
       vp: 0
     };
 
-    this._lerpFrameId = null;
+    this._lerpFrameId = 0;
     this.effect = null;
-    this.window = getOwnerWindow(this.config.root);
-    const isDocumentRoot = (!this.config.root || this.config.root === this.window.document.body);
+    this._window = getOwnerWindow(this.config.root);
+    const isDocumentRoot = (!this.config.root || this.config.root === this._window.document.body);
     // if no root or root is document.body then use window
-    this.config.root = isDocumentRoot ? this.window : this.config.root;
-    this.config.contentRoot = this.config.contentRoot || (isDocumentRoot ? this.window.document.body : this.config.root.firstElementChild);
+    this.config.root = isDocumentRoot ? this._window : this.config.root;
+    this.config.contentRoot = this.config.contentRoot || (isDocumentRoot ? this._window.document.body : this.config.root.firstElementChild);
     this.config.resetProgress = this.config.resetProgress || this.resetProgress.bind(this);
 
     this._measure = this.config.measure || (() => {
@@ -60,7 +60,7 @@ export class Scroll {
     this._trigger = frameThrottle(() => {
       this._measure?.();
       this.tick(true);
-    }, this.window);
+    }, this._window);
   }
 
   /**
@@ -134,14 +134,11 @@ export class Scroll {
     this.effect.tick(progress);
 
     if (hasLerp && (progress.p !== this.progress.p)) {
-      if (clearLerpFrame && this._lerpFrameId !== null) {
-        this.window.cancelAnimationFrame(this._lerpFrameId);
+      if (clearLerpFrame && this._lerpFrameId) {
+        this._window.cancelAnimationFrame(this._lerpFrameId);
       }
 
-      this._lerpFrameId = this.window.requestAnimationFrame(() => {
-        this._lerpFrameId = null;
-        this.tick();
-      });
+      this._lerpFrameId = this._window.requestAnimationFrame(() => this.tick());
     }
 
     progress.prevP = progress.p;
@@ -159,11 +156,6 @@ export class Scroll {
    */
   destroy () {
     this.pause();
-    this._trigger.cancel();
-    if (this._lerpFrameId !== null) {
-      this.window.cancelAnimationFrame(this._lerpFrameId);
-      this._lerpFrameId = null;
-    }
     this.removeEffect();
   }
 
