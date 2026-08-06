@@ -88,32 +88,13 @@ function debounce (fn, interval, ownerWindow = window) {
 }
 
 /**
- * Check whether a value is a Window, including a Window from another realm.
- *
- * `instanceof Window` cannot be used here because it returns false for iframe
- * windows created by a different realm.
- *
- * @param {*} value
- * @return {boolean}
- */
-function isWindow (value) {
-  return Boolean(
-    value && (
-      value === window ||
-      value.window === value ||
-      value.document?.defaultView === value
-    )
-  );
-}
-
-/**
  * Resolve the Window that owns a scroll root or DOM element.
  *
  * @param {Window|Element|undefined|null} root
  * @return {Window}
  */
 function getOwnerWindow (root) {
-  if (isWindow(root)) {
+  if (root && (root === window || root.window === root || root.document?.defaultView === root)) {
     return root;
   }
 
@@ -540,7 +521,7 @@ function calcProgress (p, start, end, duration) {
  * @return {number}
  */
 function getViewportSize (root, isHorizontal, ownerWindow) {
-  if (isWindow(root)) {
+  if (root === ownerWindow) {
     return isHorizontal
         ? ownerWindow.document.documentElement.clientWidth
         : ownerWindow.document.documentElement.clientHeight;
@@ -683,7 +664,7 @@ function getController (config) {
         });
       }, VIEWPORT_RESIZE_INTERVAL, ownerWindow);
 
-      if (isWindow(root)) {
+      if (root === ownerWindow) {
         ownerWindow.addEventListener('resize', viewportResizeHandler);
       }
       else if (ownerWindow.ResizeObserver) {
@@ -704,7 +685,7 @@ function getController (config) {
         });
       });
     }, {
-      root: isWindow(root) ? ownerWindow.document : root,
+      root: root === ownerWindow ? ownerWindow.document : root,
       rootMargin: _config.viewportRootMargin,
       threshold: 0
     });

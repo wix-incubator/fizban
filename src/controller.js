@@ -1,5 +1,5 @@
 import { debounce, defaultTo } from './utilities.js';
-import { getOwnerWindow, isWindow } from './dom.js';
+import { getOwnerWindow } from './dom.js';
 import { getTransformedSceneGroup } from './view.js';
 
 const VIEWPORT_RESIZE_INTERVAL = 100;
@@ -53,7 +53,7 @@ function calcProgress (p, start, end, duration) {
  * @return {number}
  */
 function getViewportSize (root, isHorizontal, ownerWindow) {
-  if (isWindow(root)) {
+  if (root === ownerWindow) {
     return isHorizontal
         ? ownerWindow.document.documentElement.clientWidth
         : ownerWindow.document.documentElement.clientHeight;
@@ -196,7 +196,7 @@ export function getController (config) {
         });
       }, VIEWPORT_RESIZE_INTERVAL, ownerWindow);
 
-      if (isWindow(root)) {
+      if (root === ownerWindow) {
         ownerWindow.addEventListener('resize', viewportResizeHandler);
       }
       else if (ownerWindow.ResizeObserver) {
@@ -217,7 +217,7 @@ export function getController (config) {
         });
       });
     }, {
-      root: isWindow(root) ? ownerWindow.document : root,
+      root: root === ownerWindow ? ownerWindow.document : root,
       rootMargin: _config.viewportRootMargin,
       threshold: 0
     });
