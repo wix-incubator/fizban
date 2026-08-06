@@ -1,5 +1,9 @@
 import { getOwnerWindow } from './dom.js';
 
+function getInstanceWindow (instance) {
+  return instance.window || getOwnerWindow(instance.config?.root);
+}
+
 /**
  * @typedef {ticker}
  * @property {Set} pool
@@ -35,7 +39,7 @@ export const ticker = {
    */
   tick (ownerWindow) {
     for (let instance of ticker.pool) {
-      const instanceWindow = instance.window || getOwnerWindow(instance.config?.root);
+      const instanceWindow = getInstanceWindow(instance);
       if (!ownerWindow || instanceWindow === ownerWindow) {
         instance.tick();
       }
@@ -50,7 +54,7 @@ export const ticker = {
   add (instance) {
     ticker.pool.add(instance);
     instance.ticking = true;
-    const ownerWindow = instance.window || getOwnerWindow(instance.config?.root);
+    const ownerWindow = getInstanceWindow(instance);
 
     ticker.start(ownerWindow);
   },
@@ -61,13 +65,13 @@ export const ticker = {
    * @param {Scroll} instance
    */
   remove (instance) {
-    const ownerWindow = instance.window || getOwnerWindow(instance.config?.root);
+    const ownerWindow = getInstanceWindow(instance);
 
     if ( ticker.pool.delete(instance) ) {
       instance.ticking = false;
     }
 
-    const hasWindowInstances = [...ticker.pool].some(item => (item.window || getOwnerWindow(item.config?.root)) === ownerWindow);
+    const hasWindowInstances = [...ticker.pool].some(item => getInstanceWindow(item) === ownerWindow);
     if ( ! hasWindowInstances ) {
       ticker.stop(ownerWindow);
     }

@@ -40,7 +40,7 @@ export class Scroll {
       vp: 0
     };
 
-    this._lerpFrameId = 0;
+    this._lerpFrameId = null;
     this.effect = null;
     this.window = getOwnerWindow(this.config.root);
     const isDocumentRoot = (!this.config.root || this.config.root === this.window.document.body);
@@ -134,12 +134,12 @@ export class Scroll {
     this.effect.tick(progress);
 
     if (hasLerp && (progress.p !== this.progress.p)) {
-      if (clearLerpFrame && this._lerpFrameId) {
+      if (clearLerpFrame && this._lerpFrameId !== null) {
         this.window.cancelAnimationFrame(this._lerpFrameId);
       }
 
       this._lerpFrameId = this.window.requestAnimationFrame(() => {
-        this._lerpFrameId = 0;
+        this._lerpFrameId = null;
         this.tick();
       });
     }
@@ -160,9 +160,9 @@ export class Scroll {
   destroy () {
     this.pause();
     this._trigger.cancel();
-    if (this._lerpFrameId) {
+    if (this._lerpFrameId !== null) {
       this.window.cancelAnimationFrame(this._lerpFrameId);
-      this._lerpFrameId = 0;
+      this._lerpFrameId = null;
     }
     this.removeEffect();
   }
