@@ -91,7 +91,7 @@ function debounce (fn, interval) {
  * @param {AbsoluteOffsetContext} absoluteOffsetContext
  */
 function parseOffsetCalc(offsetString, absoluteOffsetContext) {
-  const match = offsetString.match(/^calc\s*\(\s*(-?\d+((px)|([lsd]?vh)|([lsd]?vw)))\s*\+\s*(-?\d+((px)|([lsd]?vh)|([lsd]?vw)))\s*\)\s*$/);
+  const match = offsetString.match(/^calc\s*\(\s*(-?\d*\.?\d+((px)|([lsd]?vh)|([lsd]?vw)))\s*\+\s*(-?\d*\.?\d+((px)|([lsd]?vh)|([lsd]?vw)))\s*\)\s*$/);
   return transformAbsoluteOffsetToNumber(match[1], absoluteOffsetContext) + transformAbsoluteOffsetToNumber(match[6], absoluteOffsetContext);
 }
 
@@ -104,15 +104,15 @@ function parseOffsetCalc(offsetString, absoluteOffsetContext) {
  */
 function transformAbsoluteOffsetToNumber (offsetString, absoluteOffsetContext) {
   return offsetString
-    ? /^-?\d+px$/.test(offsetString)
-      ? parseInt(offsetString)
-      : /^-?\d+[lsd]?vh$/.test(offsetString)
-        ? parseInt(offsetString) * absoluteOffsetContext.viewportHeight / 100
-        : /^-?\d+[lsd]?vw$/.test(offsetString)
-          ? parseInt(offsetString) * absoluteOffsetContext.viewportWidth / 100
-          : /^calc\s*\(\s*-?\d+((px)|([lsd]?vh)|([lsd]?vw))\s*\+\s*-?\d+((px)|([lsd]?vh)|([lsd]?vw))\s*\)\s*$/.test(offsetString)
+    ? /^-?\d*\.?\d+px$/.test(offsetString)
+      ? parseFloat(offsetString)
+      : /^-?\d*\.?\d+[lsd]?vh$/.test(offsetString)
+        ? parseFloat(offsetString) * absoluteOffsetContext.viewportHeight / 100
+        : /^-?\d*\.?\d+[lsd]?vw$/.test(offsetString)
+          ? parseFloat(offsetString) * absoluteOffsetContext.viewportWidth / 100
+          : /^calc\s*\(\s*-?\d*\.?\d+((px)|([lsd]?vh)|([lsd]?vw))\s*\+\s*-?\d*\.?\d+((px)|([lsd]?vh)|([lsd]?vw))\s*\)\s*$/.test(offsetString)
             ? parseOffsetCalc(offsetString, absoluteOffsetContext)
-            : parseInt(offsetString) || 0
+            : parseFloat(offsetString) || 0
     : 0;
 }
 
@@ -337,7 +337,7 @@ function getIsFixed (style, offsetParent, root) {
  * @return {number}
  */
 function getStickyStartOffset (style, isHorizontal) {
-  return parseInt(isHorizontal ? style.left : style.top);
+  return parseFloat(isHorizontal ? style.left : style.top);
 }
 
 /**
@@ -348,7 +348,7 @@ function getStickyStartOffset (style, isHorizontal) {
  * @return {number}
  */
 function getStickyEndOffset (style, isHorizontal) {
-  return parseInt(isHorizontal ? style.right : style.bottom);
+  return parseFloat(isHorizontal ? style.right : style.bottom);
 }
 
 /**
